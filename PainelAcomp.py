@@ -6,13 +6,13 @@ from pathlib import Path
 st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋", layout="wide")
 
 # --- Carregar base ---
-DATA_PATH = Path(__file__).resolve().parent.parent / "AcompReq.xlsx"
+DATA_PATH = "AcompReq.xlsx"
 
-if not DATA_PATH.exists():
-    st.error("⚠️ O arquivo de dados não foi encontrado em 'data/AcompReq.xlsx'")
+try:
+    df = pd.read_excel(DATA_PATH)
+except FileNotFoundError:
+    st.error("⚠️ O arquivo 'AcompReq.xlsx' não foi encontrado na raiz do repositório.")
     st.stop()
-
-df = pd.read_excel(DATA_PATH)
 
 # --- Filtrar semana atual ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
@@ -43,3 +43,4 @@ st.dataframe(agrupado)
 st.subheader("🔎 Requisições sem OF")
 st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
     ['REQ_CDG', 'INSUMO_DESC', 'INSUMO_CATEGORIA', 'QTD_PED']])
+
