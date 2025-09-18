@@ -42,5 +42,4 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Requisições sem OF")
 st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
-    ['REQ_CDG', 'INSUMO_DESC', 'INSUMO_CATEGORIA', 'QTD_PED']])
-
+    ['REQ_CDG', 'INSUMO_DESC', 'QTD_PED']])
