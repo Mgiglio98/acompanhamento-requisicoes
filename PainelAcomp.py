@@ -51,7 +51,7 @@ with col2:
 with col3:
     st.metric("⏳ Com Pendências", (agrupado['QTD_PENDENTE'] > 0).sum())
 with col4:
-    total_ofs = semana_atual['OF_CDG'].notna().sum()
+    total_ofs = semana_atual['OF_CDG'].dropna().nunique()
     st.metric("🧾 Total de OFs Criadas", total_ofs)
 
 st.subheader("📊 Resumo por Requisição")
