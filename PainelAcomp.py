@@ -23,6 +23,7 @@ agrupado = (
     semana_atual
     .groupby('REQ_CDG')
     .agg(
+        EMPRD=('EMPRD', 'first'),
         EMPRD_DESC=('EMPRD_DESC', 'first'),
         EMPRD_UF=('EMPRD_UF', 'first'),
         REQ_DATA=('REQ_DATA', 'first'),
@@ -48,4 +49,4 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Requisições sem OF")
 st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
-    ['REQ_CDG', 'INSUMO_DESC', 'QTD_PED']])
+    ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_DESC']])
