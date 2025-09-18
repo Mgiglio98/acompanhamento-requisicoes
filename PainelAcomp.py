@@ -34,7 +34,7 @@ agrupado = (
 agrupado['QTD_PENDENTE'] = agrupado['QTD_INSUMOS'] - agrupado['QTD_COMPRADOS']
 
 agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
-    lambda x: "✅ Todos comprados" if x == 0 else f"⏳ {x} pendente(s)")
+    lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
 agrupado = agrupado.sort_values(['REQ_DATA', 'QTD_PENDENTE'], ascending=[True, False])
 
