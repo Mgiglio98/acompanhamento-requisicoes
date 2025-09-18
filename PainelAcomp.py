@@ -29,7 +29,7 @@ agrupado = (
         REQ_DATA=('REQ_DATA', 'first'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()))
-    .reset_index())
+    .reset_index(drop=False))
 
 agrupado['QTD_PENDENTE'] = agrupado['QTD_INSUMOS'] - agrupado['QTD_COMPRADOS']
 
@@ -37,6 +37,8 @@ agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
     lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
 agrupado = agrupado.sort_values(['REQ_DATA', 'QTD_PENDENTE'], ascending=[True, False])
+
+agrupado = agrupado.set_index('REQ_CDG')
 
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
@@ -52,6 +54,6 @@ with col3:
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
 
-st.subheader("🔎 Requisições sem OF")
+st.subheader("🔎 Insumos sem OF")
 st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
-    ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_DESC']])
+    ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']])
