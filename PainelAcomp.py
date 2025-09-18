@@ -6,7 +6,7 @@ from pathlib import Path
 st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋", layout="wide")
 
 # --- Carregar base ---
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "AcompReq.xlsx"
+DATA_PATH = Path(__file__).resolve().parent.parent / "AcompReq.xlsx"
 
 if not DATA_PATH.exists():
     st.error("⚠️ O arquivo de dados não foi encontrado em 'data/AcompReq.xlsx'")
@@ -27,11 +27,9 @@ agrupado = (
         'EMPRD_UF': 'first',
         'REQ_DATA': 'first',
         'OF_CDG': lambda x: x.notna().any(),
-        'INSUMO_DESC': 'count'
-    })
+        'INSUMO_DESC': 'count'})
     .reset_index()
-    .rename(columns={'OF_CDG': 'tem_of', 'INSUMO_DESC': 'qtd_insumos'})
-)
+    .rename(columns={'OF_CDG': 'tem_of', 'INSUMO_DESC': 'qtd_insumos'}))
 agrupado['tem_of'] = agrupado['tem_of'].map({True: "✅ Já tem OF", False: "❌ Sem OF"})
 
 # --- Painel ---
@@ -44,5 +42,4 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Requisições sem OF")
 st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
-    ['REQ_CDG', 'INSUMO_DESC', 'INSUMO_CATEGORIA', 'QTD_PED']
-])
+    ['REQ_CDG', 'INSUMO_DESC', 'INSUMO_CATEGORIA', 'QTD_PED']])
