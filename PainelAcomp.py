@@ -40,7 +40,8 @@ agrupado = agrupado.sort_values(['REQ_DATA', 'QTD_PENDENTE'], ascending=[True, F
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
 st.metric("Total Requisições", len(agrupado))
-st.metric("Requisições com OF", (agrupado['tem_of'] == "✅ Já tem OF").sum())
+st.metric("Requisições totalmente compradas", (agrupado['QTD_PENDENTE'] == 0).sum())
+st.metric("Requisições com pendências", (agrupado['QTD_PENDENTE'] > 0).sum())
 
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
