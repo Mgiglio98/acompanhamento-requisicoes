@@ -43,17 +43,21 @@ agrupado = agrupado.set_index('REQ_CDG')
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("📦 Total Requisições", len(agrupado))
 with col2:
     st.metric("✅ Totalmente Compradas", (agrupado['QTD_PENDENTE'] == 0).sum())
 with col3:
     st.metric("⏳ Com Pendências", (agrupado['QTD_PENDENTE'] > 0).sum())
+with col4:
+    total_ofs = semana_atual['OF_CDG'].notna().sum()
+    st.metric("🧾 Total de OFs Criadas", total_ofs)
 
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
 
 st.subheader("🔎 Insumos sem OF")
-st.dataframe(semana_atual[semana_atual['OF_CDG'].isna()][
-    ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']])
+colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
+base_sem_of = semana_atual[semana_atual['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
+st.dataframe(base_sem_of)
