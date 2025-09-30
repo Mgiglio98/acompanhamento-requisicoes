@@ -14,13 +14,15 @@ except FileNotFoundError:
     st.error("⚠️ O arquivo 'AcompReq.xlsx' não foi encontrado na raiz do repositório.")
     st.stop()
 
-# --- Filtrar semana atual ---
+# --- Filtrar semana atual e passada ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
-semana_atual = df[df['REQ_DATA'].dt.isocalendar().week == pd.Timestamp.now().isocalendar().week]
+semana_atual_num = pd.Timestamp.now().isocalendar().week
+semanas_desejadas = [semana_atual_num, semana_atual_num - 1]
+df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas)]
 
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
-    semana_atual
+    df_duas_semanas
     .groupby('REQ_CDG')
     .agg(
         EMPRD=('EMPRD', 'first'),
@@ -51,7 +53,7 @@ with col2:
 with col3:
     st.metric("⏳ Com Pendências", (agrupado['QTD_PENDENTE'] > 0).sum())
 with col4:
-    total_ofs = semana_atual['OF_CDG'].dropna().nunique()
+    total_ofs = df_duas_semanas['OF_CDG'].dropna().nunique()
     st.metric("🧾 Total de OFs Criadas", total_ofs)
 
 st.subheader("📊 Resumo por Requisição")
@@ -59,5 +61,5 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
-base_sem_of = semana_atual[semana_atual['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
+base_sem_of = df_duas_semanas[semana_atual['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
