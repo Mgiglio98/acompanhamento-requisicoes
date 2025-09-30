@@ -61,5 +61,5 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
-base_sem_of = df_duas_semanas[semana_atual['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
+base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
