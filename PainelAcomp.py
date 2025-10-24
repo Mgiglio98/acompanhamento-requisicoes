@@ -14,6 +14,8 @@ except FileNotFoundError:
     st.error("⚠️ O arquivo 'AcompReq.xlsx' não foi encontrado na raiz do repositório.")
     st.stop()
 
+df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG"])
+
 # --- Filtrar semana atual e passada ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
 semana_atual_num = pd.Timestamp.now().isocalendar().week
