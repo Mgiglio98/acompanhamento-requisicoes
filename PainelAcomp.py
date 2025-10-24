@@ -25,15 +25,15 @@ df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
     df_duas_semanas
-    .groupby('REQ_CDG')
+    .groupby(['EMPRD', 'REQ_CDG'], as_index=False)
     .agg(
-        EMPRD=('EMPRD', 'first'),
         EMPRD_DESC=('EMPRD_DESC', 'first'),
         EMPRD_UF=('EMPRD_UF', 'first'),
         REQ_DATA=('REQ_DATA', 'first'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
-        QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()))
-    .reset_index(drop=False))
+        QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum())
+    )
+)
 
 agrupado['QTD_PENDENTE'] = agrupado['QTD_INSUMOS'] - agrupado['QTD_COMPRADOS']
 
@@ -65,4 +65,5 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
