@@ -14,7 +14,7 @@ except FileNotFoundError:
     st.error("⚠️ O arquivo 'AcompReq.xlsx' não foi encontrado na raiz do repositório.")
     st.stop()
 
-df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG"])
+df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 
 # --- Filtrar semana atual e passada ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
@@ -65,3 +65,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
