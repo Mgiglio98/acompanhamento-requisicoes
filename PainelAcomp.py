@@ -1,9 +1,30 @@
 import pandas as pd
 import streamlit as st
+import win32com.client as win32
 from pathlib import Path
 
 # --- Configuração inicial ---
 st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋", layout="wide")
+
+def enviar_email_outlook(destinatario, assunto, corpo):
+    """
+    Envia um e-mail via Outlook Desktop usando win32com.
+    O Outlook precisa estar configurado na máquina onde o código roda.
+    """
+
+    try:
+        outlook = win32.Dispatch('outlook.application')
+        email = outlook.CreateItem(0)
+
+        email.To = destinatario
+        email.Subject = assunto
+        email.Body = corpo  # corpo em texto simples
+        email.Send()        # <--- envia de verdade
+
+        return True, None
+
+    except Exception as e:
+        return False, str(e)
 
 # --- Carregar base ---
 DATA_PATH = "AcompReq.xlsx"
@@ -95,14 +116,12 @@ with col4:
 st.subheader("📨 Envio de E-mails para Administrativos")
 
 if st.button("Enviar e-mails (teste)"):
-    # Seleciona apenas requisições com pendência
     pendentes = agrupado[agrupado["QTD_PENDENTE"] > 0].reset_index()
 
     if pendentes.empty:
         st.info("Nenhuma requisição pendente para enviar.")
     else:
-        # Agrupa por administrativo
-        grupos = pendentes.groupby("ADM")
+        grupos = pendentes.groupby("ADM_NOME")
 
         for adm, grupo in grupos:
             email = ADM_EMAILS.get(adm)
@@ -111,21 +130,24 @@ if st.button("Enviar e-mails (teste)"):
                 st.warning(f"⚠️ ADM '{adm}' não possui e-mail configurado no código.")
                 continue
 
-            st.markdown(f"### 📧 E-mail para **{adm}** — ({email})")
-
-            # Corpo de email — fase 1 (montar preview)
+            # Monta corpo do email
             corpo = f"""
 Olá {adm},
 
-Segue abaixo o resumo das requisições que ainda possuem itens pendentes:
-
-{grupo[['REQ_CDG', 'EMPRD', 'QTD_PENDENTE']].to_string(index=False)}
-
+Segue abaixo o resumo das requisições que ainda possuem itens pendentes:\n
+{grupo[['REQ_CDG', 'EMPRD', 'QTD_PENDENTE']].to_string(index=False)}\n
 Atenciosamente,
 Equipe Suprimentos
 """
 
-            st.code(corpo, language="text")
+            assunto = f"Pendências de Requisições - Obras ({adm})"
+
+            enviado, erro = enviar_email_outlook(email, assunto, corpo)
+
+            if enviado:
+                st.success(f"📧 E-mail enviado com sucesso para {adm} — ({email})")
+            else:
+                st.error(f"❌ Erro ao enviar e-mail para {adm}: {erro}")
 
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
