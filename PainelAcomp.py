@@ -15,11 +15,27 @@ except FileNotFoundError:
     st.stop()
 
 df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
+df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
+
+# --- Painel Visual---
+st.title("📋 Acompanhamento de Requisições — Semana Atual")
+
+# --- Filtro de Obras (EMPRD) logo abaixo do título ---
+emprds_disponiveis = sorted(df["EMPRD"].unique())
+
+emprds_escolhidos = st.multiselect(
+    "Selecione a(s) Obras (EMPRD):",
+    options=emprds_disponiveis,
+    default=emprds_disponiveis,  # se não selecionar nenhum → mostra todas
+)
+
+# aplica o filtro
+df = df[df["EMPRD"].isin(emprds_escolhidos)]
 
 # --- Filtrar semana atual e passada ---
-df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
 semana_atual_num = pd.Timestamp.now().isocalendar().week
 semanas_desejadas = [semana_atual_num, semana_atual_num - 1]
+
 df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas)]
 
 # --- Tabela Principal agrupada por Requisição ---
@@ -41,23 +57,7 @@ agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
     lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
 agrupado = agrupado.sort_values(['REQ_DATA', 'QTD_PENDENTE'], ascending=[True, False])
-
 agrupado = agrupado.set_index('REQ_CDG')
-
-# --- Painel Visual---
-st.title("📋 Acompanhamento de Requisições — Semana Atual")
-
-# --- Filtro de Obras (EMPRD) logo abaixo do título ---
-emprds_disponiveis = sorted(df["EMPRD"].unique())
-
-emprds_escolhidos = st.multiselect(
-    "Selecione a(s) Obras (EMPRD):",
-    options=emprds_disponiveis,
-    default=emprds_disponiveis,  # se não selecionar nenhum → mostra todas
-)
-
-# aplica o filtro
-df = df[df["EMPRD"].isin(emprds_escolhidos)]
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
