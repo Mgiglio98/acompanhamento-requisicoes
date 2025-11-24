@@ -16,6 +16,19 @@ except FileNotFoundError:
 
 df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 
+# --- Filtro por EMPRD ---
+st.sidebar.header("Filtros")
+
+emprds_disponiveis = sorted(df["EMPRD"].unique())
+
+emprds_selecionados = st.sidebar.multiselect(
+    "Selecione a Obra (EMPRD)",
+    options=emprds_disponiveis,
+    default=emprds_disponiveis
+)
+
+df = df[df["EMPRD"].isin(emprds_selecionados)]
+
 # --- Filtrar semana atual e passada ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
 semana_atual_num = pd.Timestamp.now().isocalendar().week
@@ -65,5 +78,6 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
 
