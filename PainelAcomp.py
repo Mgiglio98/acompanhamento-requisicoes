@@ -1,26 +1,31 @@
 import pandas as pd
 import streamlit as st
-import win32com.client as win32
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 
 # --- Configuração inicial ---
 st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋", layout="wide")
 
-def enviar_email_outlook(destinatario, assunto, corpo):
-    """
-    Envia um e-mail via Outlook Desktop usando win32com.
-    O Outlook precisa estar configurado na máquina onde o código roda.
-    """
+def enviar_email_smtp(destinatario, assunto, corpo):
+    smtp_server = "smtp.office365.com"
+    smtp_port = 587
+    remetente = "matheus.almeida@osborne.com.br"
+    senha = st.secrets["SMTP_PASSWORD"]
+
+    msg = MIMEMultipart()
+    msg["From"] = remetente
+    msg["To"] = destinatario
+    msg["Subject"] = assunto
+
+    msg.attach(MIMEText(corpo, "plain"))
 
     try:
-        outlook = win32.Dispatch('outlook.application')
-        email = outlook.CreateItem(0)
-
-        email.To = destinatario
-        email.Subject = assunto
-        email.Body = corpo  # corpo em texto simples
-        email.Send()        # <--- envia de verdade
-
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(remetente, senha)
+            server.send_message(msg)
         return True, None
 
     except Exception as e:
@@ -142,7 +147,7 @@ Equipe Suprimentos
 
             assunto = f"Pendências de Requisições - Obras ({adm})"
 
-            enviado, erro = enviar_email_outlook(email, assunto, corpo)
+            enviado, erro = enviar_email_smtp(destinatario, assunto, corpo)
 
             if enviado:
                 st.success(f"📧 E-mail enviado com sucesso para {adm} — ({email})")
