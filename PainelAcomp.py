@@ -102,7 +102,7 @@ if st.button("Enviar e-mails (teste)"):
         st.info("Nenhuma requisição pendente para enviar.")
     else:
         # Agrupa por administrativo
-        grupos = pendentes.groupby("ADM_NOME")
+        grupos = pendentes.groupby("ADM")
 
         for adm, grupo in grupos:
             email = ADM_EMAILS.get(adm)
@@ -134,3 +134,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
