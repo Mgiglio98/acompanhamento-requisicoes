@@ -7,6 +7,7 @@ st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋
 
 # --- Carregar base ---
 DATA_PATH = "AcompReq.xlsx"
+DATA_ADM_PATH = "AdmxEmprd.xlsx"
 
 try:
     df = pd.read_excel(DATA_PATH)
@@ -16,6 +17,22 @@ except FileNotFoundError:
 
 df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
+
+# Garante EMPRD como string para facilitar o merge
+df["EMPRD"] = df["EMPRD"].astype(str)
+
+# --- Carregar base de administrativos por obra ---
+try:
+    df_adm = pd.read_excel(DATA_ADM_PATH)
+except FileNotFoundError:
+    st.error("⚠️ O arquivo 'AdmxEmprd.xlsx' não foi encontrado na raiz do repositório.")
+    st.stop()
+
+# Garante EMPRD como string também
+df_adm["EMPRD"] = df_adm["EMPRD"].astype(str)
+
+df = df.merge(df_adm, on="EMPRD", how="left")
+
 
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
@@ -36,7 +53,6 @@ if len(emprds_escolhidos) > 0:
 # --- Filtrar semana atual e passada ---
 semana_atual_num = pd.Timestamp.now().isocalendar().week
 semanas_desejadas = [semana_atual_num, semana_atual_num - 1]
-
 df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas)]
 
 # --- Tabela Principal agrupada por Requisição ---
@@ -48,12 +64,12 @@ agrupado = (
         EMPRD_UF=('EMPRD_UF', 'first'),
         REQ_DATA=('REQ_DATA', 'first'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
-        QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum())
+        QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
+        ADM = ('ADM', 'first')
     )
 )
 
 agrupado['QTD_PENDENTE'] = agrupado['QTD_INSUMOS'] - agrupado['QTD_COMPRADOS']
-
 agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
     lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
@@ -78,4 +94,3 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
-
