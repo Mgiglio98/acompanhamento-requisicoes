@@ -31,8 +31,13 @@ except FileNotFoundError:
 # Garante EMPRD como string também
 df_adm["EMPRD"] = df_adm["EMPRD"].astype(str)
 
+ADM_EMAILS = {
+    "MARIA EDUARDA": "maria.eduarda@osborne.com.br",
+}
+
 df = df.merge(df_adm, on="EMPRD", how="left")
 
+df["ADM"] = df["ADM"].astype(str).str.strip().str.upper()
 
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
@@ -86,6 +91,41 @@ with col3:
 with col4:
     total_ofs = df_duas_semanas['OF_CDG'].dropna().nunique()
     st.metric("🧾 Total de OFs Criadas", total_ofs)
+
+st.subheader("📨 Envio de E-mails para Administrativos")
+
+if st.button("Enviar e-mails (teste)"):
+    # Seleciona apenas requisições com pendência
+    pendentes = agrupado[agrupado["QTD_PENDENTE"] > 0].reset_index()
+
+    if pendentes.empty:
+        st.info("Nenhuma requisição pendente para enviar.")
+    else:
+        # Agrupa por administrativo
+        grupos = pendentes.groupby("ADM_NOME")
+
+        for adm, grupo in grupos:
+            email = ADM_EMAILS.get(adm)
+
+            if email is None:
+                st.warning(f"⚠️ ADM '{adm}' não possui e-mail configurado no código.")
+                continue
+
+            st.markdown(f"### 📧 E-mail para **{adm}** — ({email})")
+
+            # Corpo de email — fase 1 (montar preview)
+            corpo = f"""
+Olá {adm},
+
+Segue abaixo o resumo das requisições que ainda possuem itens pendentes:
+
+{grupo[['REQ_CDG', 'EMPRD', 'QTD_PENDENTE']].to_string(index=False)}
+
+Atenciosamente,
+Equipe Suprimentos
+"""
+
+            st.code(corpo, language="text")
 
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
