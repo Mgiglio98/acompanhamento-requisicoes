@@ -16,19 +16,6 @@ except FileNotFoundError:
 
 df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 
-# --- Filtro por EMPRD ---
-st.sidebar.header("Filtros")
-
-emprds_disponiveis = sorted(df["EMPRD"].unique())
-
-emprds_selecionados = st.sidebar.multiselect(
-    "Selecione a Obra (EMPRD)",
-    options=emprds_disponiveis,
-    default=emprds_disponiveis
-)
-
-df = df[df["EMPRD"].isin(emprds_selecionados)]
-
 # --- Filtrar semana atual e passada ---
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'])
 semana_atual_num = pd.Timestamp.now().isocalendar().week
@@ -60,6 +47,18 @@ agrupado = agrupado.set_index('REQ_CDG')
 # --- Painel Visual---
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
 
+# --- Filtro de Obras (EMPRD) logo abaixo do título ---
+emprds_disponiveis = sorted(df["EMPRD"].unique())
+
+emprds_escolhidos = st.multiselect(
+    "Selecione a(s) Obras (EMPRD):",
+    options=emprds_disponiveis,
+    default=emprds_disponiveis,  # se não selecionar nenhum → mostra todas
+)
+
+# aplica o filtro
+df = df[df["EMPRD"].isin(emprds_escolhidos)]
+
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("📦 Total Requisições", len(agrupado))
@@ -78,6 +77,3 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
-
-
-
