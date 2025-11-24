@@ -147,7 +147,7 @@ Equipe Suprimentos
 
             assunto = f"Pendências de Requisições - Obras ({adm})"
 
-            enviado, erro = enviar_email_smtp(destinatario, assunto, corpo)
+            enviado, erro = enviar_email_smtp(email, assunto, corpo)
 
             if enviado:
                 st.success(f"📧 E-mail enviado com sucesso para {adm} — ({email})")
@@ -161,5 +161,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
-
 
