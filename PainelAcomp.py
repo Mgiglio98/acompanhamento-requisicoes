@@ -121,74 +121,75 @@ with col4:
 st.subheader("📨 Envio de E-mails para Administrativos")
 
 if st.button("Enviar e-mails (teste)"):
-    pendentes = agrupado[agrupado["QTD_PENDENTE"] > 0].reset_index()
 
-    if pendentes.empty:
-        st.info("Nenhuma requisição pendente para enviar.")
-    else:
-        grupos = pendentes.groupby("ADM")
+    # Agora usamos TODAS as requisições do agrupado (não só pendentes)
+    todos = agrupado.reset_index()
 
-        for adm, grupo in grupos:
-            email = ADM_EMAILS.get(adm)
+    # lista de ADMs reais na base filtrada
+    adms_lista = todos["ADM"].dropna().unique()
 
-            if email is None:
-                st.warning(f"⚠️ ADM '{adm}' não possui e-mail configurado no código.")
-                continue
+    for adm in adms_lista:
+        email = ADM_EMAILS.get(adm)
 
-            # Filtra a base detalhada (df_duas_semanas) apenas para esse ADM
-            # e só para as requisições que estão no agrupado pendente
-            reqs_adm = grupo["REQ_CDG"].unique()
+        if email is None:
+            st.warning(f"⚠️ ADM '{adm}' não possui e-mail configurado no código.")
+            continue
 
-            detalhado_adm = df_duas_semanas[
-                (df_duas_semanas["ADM"].astype(str).str.strip().str.upper() == adm)
-                & (df_duas_semanas["REQ_CDG"].isin(reqs_adm))
-            ].copy()
+        # Requisições deste ADM
+        reqs_adm = todos[todos["ADM"] == adm]["REQ_CDG"].unique()
 
-            if detalhado_adm.empty:
-                st.warning(f"⚠️ Não foi encontrado detalhamento de itens para {adm}.")
-                continue
+        # Base detalhada (com insumos + OFs)
+        detalhado_adm = df_duas_semanas[
+            (df_duas_semanas["ADM"].astype(str).str.upper() == adm)
+            & (df_duas_semanas["REQ_CDG"].isin(reqs_adm))
+        ].copy()
 
-            # Monta corpo do email de forma estruturada
-            linhas_email = []
-            linhas_email.append(f"Olá {adm},\n")
-            linhas_email.append("Segue abaixo as últimas requisições das suas obras e seus status:\n")
+        if detalhado_adm.empty:
+            st.warning(f"⚠️ Não há requisições para o ADM {adm}.")
+            continue
 
-            # Agrupa por Obra (EMPRD) e Requisição
-            for (emprd, req), df_req in detalhado_adm.groupby(["EMPRD", "REQ_CDG"]):
+        # Monta corpo do email
+        linhas_email = []
+        linhas_email.append(f"Olá {adm},\n")
+        linhas_email.append("Segue abaixo as requisições das suas obras realizadas recentemente:\n")
 
-                linhas_email.append(f"OC {emprd}")
-                linhas_email.append(f"Requisição {req}")
+        # Agrupa por obra e requisição
+        for (emprd, req), df_req in detalhado_adm.groupby(["EMPRD", "REQ_CDG"]):
 
-                # Todas as OFs atreladas à requisição
-                ofs = df_req["OF_CDG"].dropna().unique()
-                if len(ofs) > 0:
-                    for of in ofs:
-                        linhas_email.append(f" - OF {of}")
-                else:
-                    linhas_email.append(" - Nenhuma OF gerada ainda para esta requisição")
+            linhas_email.append(f"OC {emprd}")
+            linhas_email.append(f"Requisição {req}")
 
-                # Insumos pendentes de OF
-                insumos_pend = df_req[df_req["OF_CDG"].isna()]["INSUMO_DESC"].dropna().unique()
-                if len(insumos_pend) > 0:
-                    linhas_email.append(" - Insumos pendentes de OF:")
-                    for insumo in insumos_pend:
-                        linhas_email.append(f"   • {insumo}")
-                else:
-                    linhas_email.append(" - Todos os insumos desta requisição possuem OF")
-
-                linhas_email.append("")  # linha em branco entre requisições
-
-            linhas_email.append("Qualquer dúvida, estou à disposição.")
-            corpo = "\n".join(linhas_email)
-
-            assunto = f"Pendências de Requisições - Obras ({adm})"
-
-            enviado, erro = enviar_email_smtp(email, assunto, corpo)
-
-            if enviado:
-                st.success(f"📧 E-mail enviado com sucesso para {adm} — ({email})")
+            # OFs geradas para a requisição
+            ofs = df_req["OF_CDG"].dropna().unique()
+            if len(ofs) > 0:
+                linhas_email.append(" - OFs geradas:")
+                for of in ofs:
+                    linhas_email.append(f"     • {of}")
             else:
-                st.error(f"❌ Erro ao enviar e-mail para {adm}: {erro}")
+                linhas_email.append(" - Nenhuma OF gerada")
+
+            # Insumos pendentes de OF
+            insumos_pend = df_req[df_req["OF_CDG"].isna()]["INSUMO_DESC"].dropna().unique()
+            if len(insumos_pend) > 0:
+                linhas_email.append(" - Insumos pendentes de OF:")
+                for insumo in insumos_pend:
+                    linhas_email.append(f"     • {insumo}")
+            else:
+                linhas_email.append(" - Todos os insumos da REQ possuem OF")
+
+            linhas_email.append("")  # linha em branco
+
+        linhas_email.append("Qualquer dúvida, estou à disposição.")
+
+        corpo = "\n".join(linhas_email)
+        assunto = f"Resumo das Requisições — Obras ({adm})"
+
+        enviado, erro = enviar_email_smtp(email, assunto, corpo)
+
+        if enviado:
+            st.success(f"📧 E-mail enviado com sucesso para {adm} — ({email})")
+        else:
+            st.error(f"❌ Erro ao enviar e-mail para {adm}: {erro}")
 
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
