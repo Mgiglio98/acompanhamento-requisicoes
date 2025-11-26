@@ -135,15 +135,51 @@ if st.button("Enviar e-mails (teste)"):
                 st.warning(f"⚠️ ADM '{adm}' não possui e-mail configurado no código.")
                 continue
 
-            # Monta corpo do email
-            corpo = f"""
-Olá {adm},
+            # Filtra a base detalhada (df_duas_semanas) apenas para esse ADM
+            # e só para as requisições que estão no agrupado pendente
+            reqs_adm = grupo["REQ_CDG"].unique()
 
-Segue abaixo o resumo das requisições que ainda possuem itens pendentes:\n
-{grupo[['REQ_CDG', 'EMPRD', 'QTD_PENDENTE']].to_string(index=False)}\n
-Atenciosamente,
-Equipe Suprimentos
-"""
+            detalhado_adm = df_duas_semanas[
+                (df_duas_semanas["ADM"].astype(str).str.strip().str.upper() == adm)
+                & (df_duas_semanas["REQ_CDG"].isin(reqs_adm))
+            ].copy()
+
+            if detalhado_adm.empty:
+                st.warning(f"⚠️ Não foi encontrado detalhamento de itens para {adm}.")
+                continue
+
+            # Monta corpo do email de forma estruturada
+            linhas_email = []
+            linhas_email.append(f"Olá {adm},\n")
+            linhas_email.append("Segue abaixo as últimas requisições das suas obras e seus status:\n")
+
+            # Agrupa por Obra (EMPRD) e Requisição
+            for (emprd, req), df_req in detalhado_adm.groupby(["EMPRD", "REQ_CDG"]):
+
+                linhas_email.append(f"OC {emprd}")
+                linhas_email.append(f"Requisição {req}")
+
+                # Todas as OFs atreladas à requisição
+                ofs = df_req["OF_CDG"].dropna().unique()
+                if len(ofs) > 0:
+                    for of in ofs:
+                        linhas_email.append(f" - OF {of}")
+                else:
+                    linhas_email.append(" - Nenhuma OF gerada ainda para esta requisição")
+
+                # Insumos pendentes de OF
+                insumos_pend = df_req[df_req["OF_CDG"].isna()]["INSUMO_DESC"].dropna().unique()
+                if len(insumos_pend) > 0:
+                    linhas_email.append(" - Insumos pendentes de OF:")
+                    for insumo in insumos_pend:
+                        linhas_email.append(f"   • {insumo}")
+                else:
+                    linhas_email.append(" - Todos os insumos desta requisição possuem OF")
+
+                linhas_email.append("")  # linha em branco entre requisições
+
+            linhas_email.append("Qualquer dúvida, estou à disposição.")
+            corpo = "\n".join(linhas_email)
 
             assunto = f"Pendências de Requisições - Obras ({adm})"
 
@@ -161,4 +197,3 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
-
