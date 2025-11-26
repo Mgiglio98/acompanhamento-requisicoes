@@ -161,6 +161,7 @@ if st.button("Enviar e-mails (teste)"):
 
             # OFs geradas para a requisição
             ofs = df_req["OF_CDG"].dropna().unique()
+            ofs = [str(int(of)) if isinstance(of, float) else str(of) for of in ofs]
             if len(ofs) > 0:
                 linhas_email.append(" - OFs geradas:")
                 for of in ofs:
@@ -198,3 +199,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
