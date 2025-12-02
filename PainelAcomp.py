@@ -137,7 +137,7 @@ with col4:
 
 st.subheader("📨 Envio de E-mails para Administrativos")
 
-if st.button("Enviar e-mails (teste)"):
+if st.button("Enviar e-mails"):
 
     # Agora usamos TODAS as requisições do agrupado (não só pendentes)
     todos = agrupado.reset_index()
@@ -170,9 +170,7 @@ if st.button("Enviar e-mails (teste)"):
         for (emprd, req), df_req in detalhado_adm.groupby(["EMPRD", "REQ_CDG"]):
 
             linhas_email.append(f"OC {emprd}")
-            linhas_email.append("")
             linhas_email.append(f"Requisição {req}")
-            linhas_email.append("")
 
             # OFs geradas para a requisição
             ofs = df_req["OF_CDG"].dropna().unique()
@@ -198,7 +196,7 @@ if st.button("Enviar e-mails (teste)"):
         linhas_email.append("Qualquer dúvida, estou à disposição.")
 
         corpo = "\n".join(linhas_email)
-        assunto = f"Resumo das Requisições — Obras ({adm})"
+        assunto = f"Resumo das Requisições — Obras Adm {adm}"
 
         enviado, erro = enviar_email_smtp(email, assunto, corpo)
 
@@ -214,3 +212,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
