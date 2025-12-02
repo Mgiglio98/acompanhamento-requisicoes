@@ -98,6 +98,11 @@ semana_atual_num = pd.Timestamp.now().isocalendar().week
 semanas_desejadas = [semana_atual_num, semana_atual_num - 1]
 df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas)]
 
+df_duas_semanas["PENDENTE_REAL"] = (
+    df_duas_semanas["OF_CDG"].isna()
+    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
+)
+
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
     df_duas_semanas
@@ -108,11 +113,11 @@ agrupado = (
         REQ_DATA=('REQ_DATA', 'first'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
+        QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
         ADM = ('ADM', 'first')
     )
 )
 
-agrupado['QTD_PENDENTE'] = agrupado['QTD_INSUMOS'] - agrupado['QTD_COMPRADOS']
 agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
     lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
@@ -180,7 +185,7 @@ if st.button("Enviar e-mails (teste)"):
                 linhas_email.append(" - Nenhuma OF gerada")
 
             # Insumos pendentes de OF
-            insumos_pend = df_req[df_req["OF_CDG"].isna()]["INSUMO_DESC"].dropna().unique()
+            insumos_pend = df_req[df_req["PENDENTE_REAL"]]["INSUMO_DESC"].dropna().unique()
             if len(insumos_pend) > 0:
                 linhas_email.append(" - Insumos pendentes de OF:")
                 for insumo in insumos_pend:
@@ -207,5 +212,5 @@ st.dataframe(agrupado)
 
 st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
-base_sem_of = df_duas_semanas[df_duas_semanas['OF_CDG'].isna()][colunas_exibir].reset_index(drop=True)
+base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
