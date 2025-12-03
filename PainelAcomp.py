@@ -63,6 +63,9 @@ df_adm["EMPRD"] = df_adm["EMPRD"].astype(str)
 ADM_EMAILS = {
     "MARIA EDUARDA": "maria.eduarda@osborne.com.br",
     "JOICE": "joice.oliveira@osborne.com.br",
+    "GRAZIELE": "graziele.horacio@osborne.com.br",
+    "MICAELE": "micaele.ferreira@osborne.com.br",
+    "ROBERTO": "roberto.santos@osborne.com.br",
 }
 
 df = df.merge(df_adm, on="EMPRD", how="left")
@@ -212,4 +215,5 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
