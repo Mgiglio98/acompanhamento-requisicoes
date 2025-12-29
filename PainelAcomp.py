@@ -82,6 +82,9 @@ df["ADM"] = (
 )
 
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
+st.markdown(
+    f"**Período filtrado:** {df_duas_semanas['REQ_DATA'].min().date()} → {df_duas_semanas['REQ_DATA'].max().date()}"
+)
 
 # --- Filtro de Obras (EMPRD) logo abaixo do título ---
 emprds_disponiveis = sorted(df["EMPRD"].unique())
@@ -103,7 +106,13 @@ limite = hoje - pd.Timedelta(days=14)
 df_duas_semanas = df[
     (df['REQ_DATA'] >= limite) &
     (df['REQ_DATA'] <= hoje)
-]
+].copy()
+
+# Define pendência real: insumo apto e sem OF
+df_duas_semanas["PENDENTE_REAL"] = (
+    df_duas_semanas["OF_CDG"].isna()
+    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
+)
 
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
@@ -214,6 +223,3 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
-
-
-
