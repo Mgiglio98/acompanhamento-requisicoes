@@ -96,15 +96,14 @@ emprds_escolhidos = st.multiselect(
 if len(emprds_escolhidos) > 0:
     df = df[df["EMPRD"].isin(emprds_escolhidos)]
 
-# --- Filtrar semana atual e passada ---
-semana_atual_num = pd.Timestamp.now().isocalendar().week
-semanas_desejadas = [semana_atual_num, semana_atual_num - 1]
-df_duas_semanas = df[df['REQ_DATA'].dt.isocalendar().week.isin(semanas_desejadas)]
+# --- Filtrar semana atual e passada (por data, não só pelo número da semana) ---
+hoje = pd.Timestamp.now().normalize()
+limite = hoje - pd.Timedelta(days=14)
 
-df_duas_semanas["PENDENTE_REAL"] = (
-    df_duas_semanas["OF_CDG"].isna()
-    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
-)
+df_duas_semanas = df[
+    (df['REQ_DATA'] >= limite) &
+    (df['REQ_DATA'] <= hoje)
+]
 
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
@@ -215,5 +214,6 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
 
