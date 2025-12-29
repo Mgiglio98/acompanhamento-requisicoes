@@ -82,9 +82,6 @@ df["ADM"] = (
 )
 
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
-st.markdown(
-    f"**Período filtrado:** {df_duas_semanas['REQ_DATA'].min().date()} → {df_duas_semanas['REQ_DATA'].max().date()}"
-)
 
 # --- Filtro de Obras (EMPRD) logo abaixo do título ---
 emprds_disponiveis = sorted(df["EMPRD"].unique())
@@ -113,6 +110,15 @@ df_duas_semanas["PENDENTE_REAL"] = (
     df_duas_semanas["OF_CDG"].isna()
     & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
 )
+
+if not df_duas_semanas.empty:
+    periodo_min = df_duas_semanas["REQ_DATA"].min().strftime("%d/%m/%Y")
+    periodo_max = df_duas_semanas["REQ_DATA"].max().strftime("%d/%m/%Y")
+    st.markdown(
+        f"**Período filtrado:** {periodo_min} → {periodo_max}"
+    )
+else:
+    st.markdown("**Período filtrado:** sem requisições no intervalo selecionado.")
 
 # --- Tabela Principal agrupada por Requisição ---
 agrupado = (
@@ -223,3 +229,4 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
