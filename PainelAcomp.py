@@ -97,7 +97,7 @@ if len(emprds_escolhidos) > 0:
     df = df[df["EMPRD"].isin(emprds_escolhidos)]
 
 # --- Filtrar semana atual e passada (por data, não só pelo número da semana) ---
-hoje = pd.Timestamp.now().normalize()
+hoje = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
 limite = hoje - pd.Timedelta(days=14)
 
 df_duas_semanas = df[
@@ -229,4 +229,5 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
