@@ -46,6 +46,7 @@ df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'], errors = "coerce")
 # Garante EMPRD como string para facilitar o merge
 df["EMPRD"] = df["EMPRD"].astype(str)
 
+# --- Remove requisições do empreendimento 500 ---
 df = df[df["EMPRD"] != "500"]
 
 df["OF_CDG"] = df["OF_CDG"].apply(
@@ -70,6 +71,7 @@ ADM_EMAILS = {
     "ROBERTO": "roberto.santos@osborne.com.br",
 }
 
+# --- Merge com administrativos ---
 df = df.merge(df_adm, on="EMPRD", how="left")
 
 df["ADM"] = (
@@ -231,6 +233,7 @@ st.subheader("🔎 Insumos sem OF")
 colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
 base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
 st.dataframe(base_sem_of)
+
 
 
 
