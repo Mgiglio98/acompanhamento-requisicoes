@@ -33,6 +33,7 @@ def enviar_email_smtp(destinatario, assunto, corpo):
 # --- Carregar base ---
 DATA_PATH = "AcompReq.xlsx"
 DATA_ADM_PATH = "AdmxEmprd.xlsx"
+DATA_OF = "Relat_OF.xlsx"
 
 try:
     df = pd.read_excel(DATA_PATH)
@@ -85,6 +86,20 @@ df["ADM"] = (
     .replace("NAN", None)
 )
 
+# --- Carregar base de OFs ---
+try:
+    df_of = pd.read_excel(DATA_OF)
+except FileNotFoundError:
+    st.error("⚠️ O arquivo 'Relat_OF.xlsx' não foi encontrado na raiz do repositório.")
+    st.stop()
+
+df_of["OF_CDG"] = df_of["OF_CDG"].apply(
+    lambda x: int(x) if isinstance(x, float) and not pd.isna(x) else x
+)
+
+# --- Merge com base de OFs ---
+df = df.merge(df_of, on="OF_CDG", how="left")
+
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
 
 # --- Filtro de Obras (EMPRD) logo abaixo do título ---
@@ -135,7 +150,9 @@ agrupado = (
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
         QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
-        ADM = ('ADM', 'first')
+        ADM=('ADM', 'first'),
+        OF_CDG=('OF_CDG', 'first'),
+        STATUS_DESC=('STATUS_DESC', 'first')
     )
 )
 
@@ -244,4 +261,10 @@ with col_esq:
 
 with col_dir:
     st.subheader("📈 Nova visualização")
-    st.info("Espaço reservado para a próxima visualização.")
+    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "STATUS_DESC"]
+    base_of_status = df_duas_semanas[colunas_exibir].drop_duplicates().copy()
+    st.dataframe(
+        base_of_status,
+        use_container_width=True,
+        hide_index=True
+    )
