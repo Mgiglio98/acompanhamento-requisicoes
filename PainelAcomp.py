@@ -98,7 +98,7 @@ df_of["OF_CDG"] = df_of["OF_CDG"].apply(
 )
 
 # --- Mantém da base de OF apenas o que será usado no painel ---
-colunas_of = ["OF_CDG", "STATUS_DESC"]
+colunas_of = ["OF_CDG", "OF_DATA", "STATUS_DESC"]
 df_of = df_of[colunas_of].drop_duplicates()
 
 # --- Merge com base de OFs ---
@@ -252,12 +252,13 @@ col_esq, col_dir = st.columns(2)
 
 with col_esq:
     st.subheader("📈 OF's Geradas")
-    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "STATUS_DESC"]
+    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "OF_DATA", "STATUS_DESC"]
     base_of_status = (
         df_duas_semanas[df_duas_semanas["OF_CDG"].notna()][colunas_exibir]
         .drop_duplicates()
         .sort_values("OF_CDG", ascending=True)
         .copy())
+    base_of_status["OF_DATA"] = pd.to_datetime(base_of_status["OF_DATA"], errors="coerce").dt.strftime("%d/%m/%Y")
     st.dataframe(
         base_of_status,
         use_container_width=True,
