@@ -248,29 +248,26 @@ if st.button("Enviar e-mails"):
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
 
-# --- Área em 2 colunas para a segunda tabela + nova visualização ---
 col_esq, col_dir = st.columns(2)
 
 with col_esq:
-    st.subheader("🔎 Insumos sem OF")
+    st.subheader("📈 OF's Geradas")
+    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "STATUS_DESC"]
+    base_of_status = (
+        df_duas_semanas[df_duas_semanas["OF_CDG"].notna()][colunas_exibir]
+        .drop_duplicates()
+        .sort_values("OF_CDG", ascending=True)
+        .copy())
+    st.dataframe(
+        base_of_status,
+        use_container_width=True,
+        hide_index=True)
+
+with col_dir:
+    st.subheader("🔎 Insumos Pendentes")
     colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "INSUMO_CDG", "INSUMO_DESC"]
     base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].copy()
     st.dataframe(
         base_sem_of,
         use_container_width=True,
-        hide_index=True
-    )
-
-with col_dir:
-    st.subheader("📈 Nova visualização")
-    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "STATUS_DESC"]
-    base_of_status = (
-        df_duas_semanas[colunas_exibir]
-        .drop_duplicates()
-        .sort_values("OF_CDG", ascending=True, na_position="last")
-        .copy())
-    st.dataframe(
-        base_of_status,
-        use_container_width=True,
-        hide_index=True
-    )
+        hide_index=True)
