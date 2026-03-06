@@ -97,8 +97,10 @@ df_of["OF_CDG"] = df_of["OF_CDG"].apply(
     lambda x: int(x) if isinstance(x, float) and not pd.isna(x) else x
 )
 
+df_of = df_of.rename(columns={"OF_DATA": "OF_DATA_RELAT"})
+
 # --- Mantém da base de OF apenas o que será usado no painel ---
-colunas_of = ["OF_CDG", "OF_DATA", "STATUS_DESC"]
+colunas_of = ["OF_CDG", "OF_DATA_RELAT", "STATUS_DESC"]
 df_of = df_of[colunas_of].drop_duplicates()
 
 # --- Merge com base de OFs ---
@@ -252,13 +254,14 @@ col_esq, col_dir = st.columns(2)
 
 with col_esq:
     st.subheader("📈 OF's Geradas")
-    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "OF_DATA", "STATUS_DESC"]
+    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "OF_DATA_RELAT", "STATUS_DESC"]
     base_of_status = (
         df_duas_semanas[df_duas_semanas["OF_CDG"].notna()][colunas_exibir]
         .drop_duplicates()
         .sort_values("OF_CDG", ascending=True)
         .copy())
-    base_of_status["OF_DATA"] = pd.to_datetime(base_of_status["OF_DATA"], errors="coerce").dt.strftime("%d/%m/%Y")
+    base_of_status["OF_DATA_RELAT"] = pd.to_datetime(base_of_status["OF_DATA_RELAT"], errors="coerce").dt.strftime("%d/%m/%Y")
+    base_of_status = base_of_status.rename(columns={"OF_DATA_RELAT": "OF_DATA"})
     st.dataframe(
         base_of_status,
         use_container_width=True,
