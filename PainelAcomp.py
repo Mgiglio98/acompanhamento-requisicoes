@@ -265,8 +265,9 @@ with col_esq:
 
 with col_dir:
     st.subheader("🔎 Insumos Pendentes")
-    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "INSUMO_CDG", "INSUMO_DESC"]
+    colunas_exibir = ["REQ_CDG", "REQ_DATA", "EMPRD", "EMPRD_DESC", "INSUMO_CDG", "INSUMO_DESC"]
     base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].copy()
+    base_sem_of["REQ_DATA"] = base_sem_of["REQ_DATA"].dt.strftime("%d/%m/%Y")
     st.dataframe(
         base_sem_of,
         use_container_width=True,
