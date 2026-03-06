@@ -155,8 +155,6 @@ agrupado = (
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
         QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
         ADM=('ADM', 'first'),
-        OF_CDG=('OF_CDG', 'first'),
-        STATUS_DESC=('STATUS_DESC', 'first')
     )
 )
 
@@ -266,7 +264,11 @@ with col_esq:
 with col_dir:
     st.subheader("📈 Nova visualização")
     colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "OF_CDG", "STATUS_DESC"]
-    base_of_status = df_duas_semanas[colunas_exibir].drop_duplicates().copy()
+    base_of_status = (
+        df_duas_semanas[colunas_exibir]
+        .drop_duplicates()
+        .sort_values("OF_CDG", ascending=True, na_position="last")
+        .copy())
     st.dataframe(
         base_of_status,
         use_container_width=True,
