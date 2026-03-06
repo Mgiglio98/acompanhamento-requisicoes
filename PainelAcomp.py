@@ -97,6 +97,10 @@ df_of["OF_CDG"] = df_of["OF_CDG"].apply(
     lambda x: int(x) if isinstance(x, float) and not pd.isna(x) else x
 )
 
+# --- Mantém da base de OF apenas o que será usado no painel ---
+colunas_of = ["OF_CDG", "STATUS_DESC"]
+df_of = df_of[colunas_of].drop_duplicates()
+
 # --- Merge com base de OFs ---
 df = df.merge(df_of, on="OF_CDG", how="left")
 
