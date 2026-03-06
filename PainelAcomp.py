@@ -229,11 +229,19 @@ if st.button("Enviar e-mails"):
 st.subheader("📊 Resumo por Requisição")
 st.dataframe(agrupado)
 
-st.subheader("🔎 Insumos sem OF")
-colunas_exibir = ['EMPRD', 'EMPRD_DESC', 'REQ_CDG', 'INSUMO_CDG', 'INSUMO_DESC']
-base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].reset_index(drop=True)
-st.dataframe(base_sem_of)
+# --- Área em 2 colunas para a segunda tabela + nova visualização ---
+col_esq, col_dir = st.columns(2)
 
+with col_esq:
+    st.subheader("🔎 Insumos sem OF")
+    colunas_exibir = ["REQ_CDG", "EMPRD", "EMPRD_DESC", "INSUMO_CDG", "INSUMO_DESC"]
+    base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].copy()
+    st.dataframe(
+        base_sem_of,
+        use_container_width=True,
+        hide_index=True
+    )
 
-
-
+with col_dir:
+    st.subheader("📈 Nova visualização")
+    st.info("Espaço reservado para a próxima visualização.")
