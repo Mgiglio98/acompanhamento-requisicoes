@@ -108,18 +108,31 @@ df = df.merge(df_of, on="OF_CDG", how="left")
 
 st.title("📋 Acompanhamento de Requisições — Semana Atual")
 
-# --- Filtro de Obras (EMPRD) logo abaixo do título ---
-emprds_disponiveis = sorted(df["EMPRD"].unique())
+col1, col2 = st.columns(2)
 
-emprds_escolhidos = st.multiselect(
-    "Selecione a(s) Obras (EMPRD):",
-    options=emprds_disponiveis,
-    default=emprds_disponiveis,
-)
+with col1:
+    # --- Filtro de Obras (EMPRD) logo abaixo do título ---
+    emprds_disponiveis = sorted(df["EMPRD"].unique())
+    emprds_escolhidos = st.multiselect(
+        "Selecione a(s) Obras (EMPRD):",
+        options=emprds_disponiveis,
+        default=emprds_disponiveis,)
+
+with col2:
+    # --- Filtro de Obras (EMPRD) logo abaixo do título ---
+    status_of = sorted(df_of["STATUS_DESC"].unique())
+    status_escolhidos = st.multiselect(
+        "Selecione o(s) Status da OF:",
+        options=status_of,
+        default=status_of,)
 
 # aplica o filtro
 if len(emprds_escolhidos) > 0:
     df = df[df["EMPRD"].isin(emprds_escolhidos)]
+
+# aplica o filtro
+if len(status_escolhidos) > 0:
+    df_of = df_of[df_of["STATUS_DESC"].isin(status_escolhidos)]
 
 # --- Filtrar semana atual e passada (por data, não só pelo número da semana) ---
 hoje = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
@@ -276,3 +289,4 @@ with col_dir:
         base_sem_of,
         use_container_width=True,
         hide_index=True)
+
