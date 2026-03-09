@@ -4,7 +4,6 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# --- Configuração inicial ---
 st.set_page_config(page_title="Acompanhamento de Requisições", page_icon="📋", layout="wide")
 
 def enviar_email_smtp(destinatario, assunto, corpo):
@@ -30,39 +29,28 @@ def enviar_email_smtp(destinatario, assunto, corpo):
     except Exception as e:
         return False, str(e)
 
-# --- Carregar base ---
 DATA_PATH = "AcompReq.xlsx"
 DATA_ADM_PATH = "AdmxEmprd.xlsx"
 DATA_OF = "Relat_OF.xlsx"
 
-try:
+@st.cache_data
+def carregar_bases():
     df = pd.read_excel(DATA_PATH)
-except FileNotFoundError:
-    st.error("⚠️ O arquivo 'AcompReq.xlsx' não foi encontrado na raiz do repositório.")
-    st.stop()
+    df_adm = pd.read_excel(DATA_ADM_PATH)
+    df_of = pd.read_excel(DATA_OF)
+    return df, df_adm, df_of
+
+df, df_adm, df_of = carregar_bases()
 
 df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 df['REQ_DATA'] = pd.to_datetime(df['REQ_DATA'], errors = "coerce")
 
-# Garante EMPRD como string para facilitar o merge
-df["EMPRD"] = df["EMPRD"].astype(str)
+df["EMPRD"] = df["EMPRD"].astype("string").str.strip()
+df_adm["EMPRD"] = df_adm["EMPRD"].astype("string").str.strip()
 
-# --- Remove requisições do empreendimento 500 ---
 df = df[df["EMPRD"] != "500"]
 
-df["OF_CDG"] = df["OF_CDG"].apply(
-    lambda x: int(x) if isinstance(x, float) and not pd.isna(x) else x
-)
-
-# --- Carregar base de administrativos por obra ---
-try:
-    df_adm = pd.read_excel(DATA_ADM_PATH)
-except FileNotFoundError:
-    st.error("⚠️ O arquivo 'AdmxEmprd.xlsx' não foi encontrado na raiz do repositório.")
-    st.stop()
-
-# Garante EMPRD como string também
-df_adm["EMPRD"] = df_adm["EMPRD"].astype(str)
+df["OF_CDG"] = pd.to_numeric(df["OF_CDG"], errors="coerce").astype("Int64")
 
 ADM_EMAILS = {
     "MARIA EDUARDA": "maria.eduarda@osborne.com.br",
@@ -77,25 +65,16 @@ df = df.merge(df_adm, on="EMPRD", how="left")
 
 df["ADM"] = (
     df["ADM"]
-    .astype(str)
+    .astype("string")
     .str.normalize("NFKD")
     .str.encode("ascii", "ignore")
     .str.decode("utf-8")
     .str.strip()
     .str.upper()
-    .replace("NAN", None)
 )
+df["ADM"] = df["ADM"].replace({"<NA>": None, "NAN": None})
 
-# --- Carregar base de OFs ---
-try:
-    df_of = pd.read_excel(DATA_OF)
-except FileNotFoundError:
-    st.error("⚠️ O arquivo 'Relat_OF.xlsx' não foi encontrado na raiz do repositório.")
-    st.stop()
-
-df_of["OF_CDG"] = df_of["OF_CDG"].apply(
-    lambda x: int(x) if isinstance(x, float) and not pd.isna(x) else x
-)
+df_of["OF_CDG"] = pd.to_numeric(df_of["OF_CDG"], errors="coerce").astype("Int64")
 
 df_of = df_of.rename(columns={"OF_DATA": "OF_DATA_RELAT"})
 
@@ -106,55 +85,52 @@ df_of = df_of[colunas_of].drop_duplicates()
 # --- Merge com base de OFs ---
 df = df.merge(df_of, on="OF_CDG", how="left")
 
-st.title("📋 Acompanhamento de Requisições — Semana Atual")
+st.title("📋 Acompanhamento de Requisições — Últimos 14 dias")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    # --- Filtro de Obras (EMPRD) logo abaixo do título ---
-    emprds_disponiveis = sorted(df["EMPRD"].unique())
+    emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
     emprds_escolhidos = st.multiselect(
         "Selecione a(s) Obras (EMPRD):",
         options=emprds_disponiveis,
         default=emprds_disponiveis,)
 
 with col2:
-    # --- Filtro de Obras (EMPRD) logo abaixo do título ---
-    status_of = sorted(df_of["STATUS_DESC"].unique())
+    status_of = sorted(df_of["STATUS_DESC"].dropna().unique().tolist())
     status_escolhidos = st.multiselect(
         "Selecione o(s) Status da OF:",
         options=status_of,
         default=status_of,)
 
-# aplica o filtro
+df_base = df.copy()
+
 if len(emprds_escolhidos) > 0:
-    df = df[df["EMPRD"].isin(emprds_escolhidos)]
+    df_base = df_base[df_base["EMPRD"].isin(emprds_escolhidos)]
 
-# aplica o filtro
 if len(status_escolhidos) > 0:
-    df_of = df_of[df_of["STATUS_DESC"].isin(status_escolhidos)]
+    df_base = df_base[
+        df_base["STATUS_DESC"].isin(status_escolhidos) | df_base["OF_CDG"].isna()
+    ]
 
-# --- Filtrar semana atual e passada (por data, não só pelo número da semana) ---
-hoje = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
-limite = hoje - pd.Timedelta(days=14)
+# --- Filtrar últimos 14 dias ---
+fim_periodo = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
+inicio_periodo = fim_periodo - pd.Timedelta(days=14)
 
-df_duas_semanas = df[
-    (df['REQ_DATA'] >= limite) &
-    (df['REQ_DATA'] <= hoje)
+df_duas_semanas = df_base[
+    (df_base["REQ_DATA"] >= inicio_periodo) &
+    (df_base["REQ_DATA"] < fim_periodo)
 ].copy()
 
 # Define pendência real: insumo apto e sem OF
 df_duas_semanas["PENDENTE_REAL"] = (
-    df_duas_semanas["OF_CDG"].isna()
-    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
-)
+    df_duas_semanas["OF_CDG"].isna() & (df_duas_semanas["INSUMO_STATUS"] == "Apto"))
 
 if not df_duas_semanas.empty:
     periodo_min = df_duas_semanas["REQ_DATA"].min().strftime("%d/%m/%Y")
     periodo_max = df_duas_semanas["REQ_DATA"].max().strftime("%d/%m/%Y")
     st.markdown(
-        f"**Período filtrado:** {periodo_min} → {periodo_max}"
-    )
+        f"**Período filtrado:** {periodo_min} → {periodo_max}")
 else:
     st.markdown("**Período filtrado:** sem requisições no intervalo selecionado.")
 
@@ -165,7 +141,7 @@ agrupado = (
     .agg(
         EMPRD_DESC=('EMPRD_DESC', 'first'),
         EMPRD_UF=('EMPRD_UF', 'first'),
-        REQ_DATA=('REQ_DATA', 'first'),
+        REQ_DATA=('REQ_DATA', 'min'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
         QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
@@ -194,10 +170,8 @@ st.subheader("📨 Envio de E-mails para Administrativos")
 
 if st.button("Enviar e-mails"):
 
-    # Agora usamos TODAS as requisições do agrupado (não só pendentes)
     todos = agrupado.reset_index()
 
-    # lista de ADMs reais na base filtrada
     adms_lista = [a for a in todos["ADM"].dropna().unique() if a in ADM_EMAILS]
 
     for adm in adms_lista:
@@ -224,12 +198,11 @@ if st.button("Enviar e-mails"):
         # Agrupa por obra e requisição
         for (emprd, req), df_req in detalhado_adm.groupby(["EMPRD", "REQ_CDG"]):
 
-            linhas_email.append(f"OC {emprd}")
-            linhas_email.append(f"Requisição {req}")
+            linhas_email.append(f"Obra: {emprd}")
+            linhas_email.append(f"Requisição: {req}")
 
             # OFs geradas para a requisição
-            ofs = df_req["OF_CDG"].dropna().unique()
-            ofs = [str(int(float(of))) for of in ofs]
+            ofs = df_req["OF_CDG"].dropna().astype(str).unique().tolist()
             if len(ofs) > 0:
                 linhas_email.append(" - OFs geradas:")
                 for of in ofs:
@@ -261,7 +234,12 @@ if st.button("Enviar e-mails"):
             st.error(f"❌ Erro ao enviar e-mail para {adm}: {erro}")
 
 st.subheader("📊 Resumo por Requisição")
-st.dataframe(agrupado)
+agrupado_view = agrupado.reset_index().copy()
+agrupado_view["REQ_DATA"] = pd.to_datetime(
+    agrupado_view["REQ_DATA"], errors="coerce"
+).dt.strftime("%d/%m/%Y")
+
+st.dataframe(agrupado_view, use_container_width=True, hide_index=True)
 
 col_esq, col_dir = st.columns(2)
 
@@ -289,4 +267,3 @@ with col_dir:
         base_sem_of,
         use_container_width=True,
         hide_index=True)
-
