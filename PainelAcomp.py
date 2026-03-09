@@ -87,45 +87,97 @@ df = df.merge(df_of, on="OF_CDG", how="left")
 
 st.title("📋 Acompanhamento de Requisições — Últimos 14 dias")
 
+# --- Filtro inicial de obra ---
+emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
+
+# valores padrão
+default_emprds = emprds_disponiveis
+
+# período base
+fim_periodo = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
+inicio_periodo = fim_periodo - pd.Timedelta(days=14)
+
+# base temporária inicial
+df_base_temp = df.copy()
+
 col1, col2 = st.columns(2)
 
 with col1:
-    emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
     emprds_escolhidos = st.multiselect(
         "Selecione a(s) Obras (EMPRD):",
         options=emprds_disponiveis,
-        default=emprds_disponiveis,)
+        default=default_emprds,
+    )
+
+if len(emprds_escolhidos) > 0:
+    df_base_temp = df_base_temp[df_base_temp["EMPRD"].isin(emprds_escolhidos)]
+
+# base temporária no período para descobrir os status disponíveis
+df_temp_periodo = df_base_temp[
+    (df_base_temp["REQ_DATA"] >= inicio_periodo) &
+    (df_base_temp["REQ_DATA"] < fim_periodo)
+].copy()
+
+df_temp_periodo["PENDENTE_REAL"] = (
+    df_temp_periodo["OF_CDG"].isna()
+    & (df_temp_periodo["INSUMO_STATUS"] == "Apto")
+)
+
+status_por_req_temp = (
+    df_temp_periodo
+    .groupby("REQ_CDG")["PENDENTE_REAL"]
+    .sum()
+    .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
+    .rename("STATUS_REQ")
+    .reset_index()
+)
+
+df_temp_periodo = df_temp_periodo.merge(status_por_req_temp, on="REQ_CDG", how="left")
+
+status_req_opcoes = sorted(df_temp_periodo["STATUS_REQ"].dropna().unique().tolist())
 
 with col2:
-    status_of = sorted(df_of["STATUS_DESC"].dropna().unique().tolist())
-    status_escolhidos = st.multiselect(
-        "Selecione o(s) Status da OF:",
-        options=status_of,
-        default=status_of,)
+    status_req_escolhidos = st.multiselect(
+        "Selecione o(s) Status da Requisição:",
+        options=status_req_opcoes,
+        default=status_req_opcoes,
+    )
 
+# base final filtrada por obra
 df_base = df.copy()
 
 if len(emprds_escolhidos) > 0:
     df_base = df_base[df_base["EMPRD"].isin(emprds_escolhidos)]
 
-if len(status_escolhidos) > 0:
-    df_base = df_base[
-        df_base["STATUS_DESC"].isin(status_escolhidos) | df_base["OF_CDG"].isna()
-    ]
-
-# --- Filtrar últimos 14 dias ---
-fim_periodo = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
-inicio_periodo = fim_periodo - pd.Timedelta(days=14)
-
+# base final no período
 df_duas_semanas = df_base[
     (df_base["REQ_DATA"] >= inicio_periodo) &
     (df_base["REQ_DATA"] < fim_periodo)
 ].copy()
 
-# Define pendência real: insumo apto e sem OF
+# pendência real
 df_duas_semanas["PENDENTE_REAL"] = (
-    df_duas_semanas["OF_CDG"].isna() & (df_duas_semanas["INSUMO_STATUS"] == "Apto"))
+    df_duas_semanas["OF_CDG"].isna()
+    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
+)
 
+# status calculado
+status_por_req = (
+    df_duas_semanas
+    .groupby("REQ_CDG")["PENDENTE_REAL"]
+    .sum()
+    .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
+    .rename("STATUS_REQ")
+    .reset_index()
+)
+
+df_duas_semanas = df_duas_semanas.merge(status_por_req, on="REQ_CDG", how="left")
+
+# aplica filtro de status
+if len(status_req_escolhidos) > 0:
+    df_duas_semanas = df_duas_semanas[
+        df_duas_semanas["STATUS_REQ"].isin(status_req_escolhidos)
+    ]
 if not df_duas_semanas.empty:
     periodo_min = df_duas_semanas["REQ_DATA"].min().strftime("%d/%m/%Y")
     periodo_max = df_duas_semanas["REQ_DATA"].max().strftime("%d/%m/%Y")
@@ -146,11 +198,9 @@ agrupado = (
         QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
         QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
         ADM=('ADM', 'first'),
+        STATUS=('STATUS_REQ', 'first'),
     )
 )
-
-agrupado['STATUS'] = agrupado['QTD_PENDENTE'].apply(
-    lambda x: "✅ Todos Comprados" if x == 0 else f"⏳ Não Finalizada")
 
 agrupado = agrupado.sort_values(['REQ_DATA', 'EMPRD', 'REQ_CDG'])
 agrupado = agrupado.set_index('REQ_CDG')
