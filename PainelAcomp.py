@@ -125,14 +125,18 @@ df_temp_periodo["PENDENTE_REAL"] = (
 
 status_por_req_temp = (
     df_temp_periodo
-    .groupby("REQ_CDG")["PENDENTE_REAL"]
+    .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
     .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
     .rename("STATUS_REQ")
     .reset_index()
 )
 
-df_temp_periodo = df_temp_periodo.merge(status_por_req_temp, on="REQ_CDG", how="left")
+df_temp_periodo = df_temp_periodo.merge(
+    status_por_req_temp,
+    on=["EMPRD", "REQ_CDG"],
+    how="left"
+)
 
 status_req_opcoes = sorted(df_temp_periodo["STATUS_REQ"].dropna().unique().tolist())
 
@@ -164,14 +168,18 @@ df_duas_semanas["PENDENTE_REAL"] = (
 # status calculado
 status_por_req = (
     df_duas_semanas
-    .groupby("REQ_CDG")["PENDENTE_REAL"]
+    .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
     .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
     .rename("STATUS_REQ")
     .reset_index()
 )
 
-df_duas_semanas = df_duas_semanas.merge(status_por_req, on="REQ_CDG", how="left")
+df_duas_semanas = df_duas_semanas.merge(
+    status_por_req,
+    on=["EMPRD", "REQ_CDG"],
+    how="left"
+)
 
 # aplica filtro de status
 if len(status_req_escolhidos) > 0:
@@ -317,3 +325,4 @@ with col_dir:
         base_sem_of,
         use_container_width=True,
         hide_index=True)
+
