@@ -127,7 +127,7 @@ status_por_req_temp = (
     df_temp_periodo
     .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
-    .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
+    .apply(lambda x: "✅ Finalizada" if x == 0 else "⏳ Com Pendências")
     .rename("STATUS_REQ")
     .reset_index()
 )
@@ -170,7 +170,7 @@ status_por_req = (
     df_duas_semanas
     .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
-    .apply(lambda x: "✅ Finalizado" if x == 0 else "⏳ Insumos Pendentes")
+    .apply(lambda x: "✅ Finalizada" if x == 0 else "⏳ Com Pendências")
     .rename("STATUS_REQ")
     .reset_index()
 )
@@ -216,7 +216,7 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("📦 Total Requisições", len(agrupado))
 with col2:
-    st.metric("✅ Totalmente Compradas", (agrupado['QTD_PENDENTE'] == 0).sum())
+    st.metric("✅ Total Finalizadas", (agrupado['QTD_PENDENTE'] == 0).sum())
 with col3:
     st.metric("⏳ Com Pendências", (agrupado['QTD_PENDENTE'] > 0).sum())
 with col4:
@@ -319,7 +319,7 @@ with col_esq:
 
 with col_dir:
     st.subheader("🔎 Insumos Pendentes")
-    colunas_exibir = ["REQ_CDG", "REQ_DATA", "EMPRD", "EMPRD_DESC", "INSUMO_DESC", "INSUMO_CDG"]
+    colunas_exibir = ["REQ_CDG", "REQ_DATA", "EMPRD", "EMPRD_DESC", "INSUMO_DESC"]
     base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].copy()
     base_sem_of["REQ_DATA"] = base_sem_of["REQ_DATA"].dt.strftime("%d/%m/%Y")
     base_sem_of = base_sem_of.rename(columns={"REQ_DATA": "Data da Requisição","REQ_CDG": "Requisição","EMPRD": "Nº da Obra","EMPRD_DESC": "Empreendimento","INSUMO_CDG": "Codigo do Insumo","INSUMO_DESC": "Insumo"})
@@ -327,4 +327,3 @@ with col_dir:
         base_sem_of,
         use_container_width=True,
         hide_index=True)
-
