@@ -296,6 +296,8 @@ agrupado_view["REQ_DATA"] = pd.to_datetime(
     agrupado_view["REQ_DATA"], errors="coerce"
 ).dt.strftime("%d/%m/%Y")
 
+agrupado_view = agrupado_view.rename(columns={"REQ_CDG": "Requisição"})
+
 st.dataframe(agrupado_view, use_container_width=True, hide_index=True)
 
 col_esq, col_dir = st.columns(2)
