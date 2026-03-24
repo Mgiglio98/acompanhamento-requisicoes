@@ -203,7 +203,6 @@ agrupado = (
         EMPRD_UF=('EMPRD_UF', 'first'),
         REQ_DATA=('REQ_DATA', 'min'),
         QTD_INSUMOS=('INSUMO_DESC', 'count'),
-        QTD_COMPRADOS=('OF_CDG', lambda x: x.notna().sum()),
         QTD_PENDENTE=('PENDENTE_REAL', 'sum'),
         ADM=('ADM', 'first'),
         STATUS=('STATUS_REQ', 'first'),
