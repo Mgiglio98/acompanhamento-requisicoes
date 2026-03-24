@@ -170,7 +170,7 @@ status_por_req = (
     df_duas_semanas
     .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
-    .apply(lambda x: "✅ Todos Comprados" if x == 0 else "⏳ Não Finalizada")
+    .apply(lambda x: "✅ Finalizado" if x == 0 else "⏳ Insumos Pendentes")
     .rename("STATUS_REQ")
     .reset_index()
 )
@@ -296,7 +296,7 @@ agrupado_view["REQ_DATA"] = pd.to_datetime(
     agrupado_view["REQ_DATA"], errors="coerce"
 ).dt.strftime("%d/%m/%Y")
 
-agrupado_view = agrupado_view.rename(columns={"REQ_CDG": "Requisição","EMPRD": "Nº da Obra"})
+agrupado_view = agrupado_view.rename(columns={"REQ_CDG": "Requisição","EMPRD": "Nº da Obra","EMPRD_DESC": "Empreendimento","EMPRD_UF": "Estado","REQ_DATA": "Data da Requisição","QTD_INSUMOS": "Insumos Solicitados","QTD_PENDENTE": "Insumos Pendentes","ADM": "ADM da Obra","STATUS": "Status de Compra"})
 
 st.dataframe(agrupado_view, use_container_width=True, hide_index=True)
 
@@ -311,7 +311,7 @@ with col_esq:
         .sort_values("OF_CDG", ascending=True)
         .copy())
     base_of_status["OF_DATA_RELAT"] = pd.to_datetime(base_of_status["OF_DATA_RELAT"], errors="coerce").dt.strftime("%d/%m/%Y")
-    base_of_status = base_of_status.rename(columns={"OF_DATA_RELAT": "OF_DATA"})
+    base_of_status = base_of_status.rename(columns={"OF_DATA_RELAT": "Data da OF","REQ_CDG": "Requisição","EMPRD": "Nº da Obra","EMPRD_DESC": "Empreendimento","OF_CDG": "OF","STATUS_DESC": "Status da OF"})
     st.dataframe(
         base_of_status,
         use_container_width=True,
@@ -319,9 +319,10 @@ with col_esq:
 
 with col_dir:
     st.subheader("🔎 Insumos Pendentes")
-    colunas_exibir = ["REQ_CDG", "REQ_DATA", "EMPRD", "EMPRD_DESC", "INSUMO_CDG", "INSUMO_DESC"]
+    colunas_exibir = ["REQ_CDG", "REQ_DATA", "EMPRD", "EMPRD_DESC", "INSUMO_DESC", "INSUMO_CDG"]
     base_sem_of = df_duas_semanas[df_duas_semanas["PENDENTE_REAL"]][colunas_exibir].copy()
     base_sem_of["REQ_DATA"] = base_sem_of["REQ_DATA"].dt.strftime("%d/%m/%Y")
+    base_sem_of = base_sem_of.rename(columns={"REQ_DATA": "Data da Requisição","REQ_CDG": "Requisição","EMPRD": "Nº da Obra","EMPRD_DESC": "Empreendimento","INSUMO_CDG": "Codigo do Insumo","INSUMO_DESC": "Insumo"})
     st.dataframe(
         base_sem_of,
         use_container_width=True,
