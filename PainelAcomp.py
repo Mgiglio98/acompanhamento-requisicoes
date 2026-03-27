@@ -95,7 +95,7 @@ default_emprds = emprds_disponiveis
 
 # período base
 fim_periodo = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
-inicio_periodo = fim_periodo - pd.Timedelta(days=14)
+inicio_periodo = fim_periodo - pd.Timedelta(days=15)
 
 # base temporária inicial
 df_base_temp = df.copy()
