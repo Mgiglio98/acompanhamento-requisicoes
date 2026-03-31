@@ -85,7 +85,7 @@ df_of = df_of[colunas_of].drop_duplicates()
 # --- Merge com base de OFs ---
 df = df.merge(df_of, on="OF_CDG", how="left")
 
-st.title("📋 Acompanhamento de Requisições — Últimos 14 dias")
+st.title("📋 Acompanhamento de Requisições — 2026")
 
 # --- Filtro inicial de obra ---
 emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
@@ -93,9 +93,10 @@ emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
 # valores padrão
 default_emprds = emprds_disponiveis
 
-# período base
-fim_periodo = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
-inicio_periodo = fim_periodo - pd.Timedelta(days=15)
+# período base = ano atual inteiro
+ano_atual = pd.Timestamp.now().year
+inicio_periodo = pd.Timestamp(year=ano_atual, month=1, day=1)
+fim_periodo = pd.Timestamp(year=ano_atual + 1, month=1, day=1)
 
 # base temporária inicial
 df_base_temp = df.copy()
