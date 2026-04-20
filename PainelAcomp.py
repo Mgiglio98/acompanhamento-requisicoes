@@ -33,7 +33,6 @@ DATA_PATH = "AcompReq.xlsx"
 DATA_ADM_PATH = "AdmxEmprd.xlsx"
 DATA_OF = "Relat_OF.xlsx"
 
-@st.cache_data
 def carregar_bases():
     df = pd.read_excel(DATA_PATH)
     df_adm = pd.read_excel(DATA_ADM_PATH)
