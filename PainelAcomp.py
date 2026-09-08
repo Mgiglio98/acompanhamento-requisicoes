@@ -26,7 +26,6 @@ df.columns = df.columns.str.upper()
 df_adm.columns = df_adm.columns.str.upper()
 
 # Tratamentos principais
-df = df.drop_duplicates(subset=["REQ_CDG", "INSUMO_CDG", "EMPRD"])
 df["REQ_DATA"] = pd.to_datetime(df["REQ_DATA"], errors="coerce")
 df["OF_DATA"] = pd.to_datetime(df["OF_DATA"], errors="coerce")
 
