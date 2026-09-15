@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import numpy as np
 
 st.set_page_config(
     page_title="Acompanhamento de Requisições",
@@ -197,7 +198,38 @@ with col5:
 # TABELAS
 st.subheader("📊 Resumo por Requisição")
 
+def cor_tempo_processo(valor):
+    if valor == "-":
+        return ""
+
+    dias = int(valor.split()[0])
+
+    if dias <= 2:
+        return "background-color: #d4edda; color: #155724;"
+    elif dias == 3:
+        return "background-color: #fff3cd; color: #856404;"
+    else:
+        return "background-color: #f8d7da; color: #721c24;"
+
 agrupado_view = agrupado.reset_index().copy()
+
+hoje = pd.Timestamp.now().normalize()
+
+agrupado_view["DIAS_PROCESSO"] = agrupado_view["REQ_DATA"].apply(
+    lambda data: np.busday_count(
+        data.date(),
+        hoje.date()
+    ) if pd.notna(data) else None
+)
+
+agrupado_view["TEMPO_PROCESSO"] = agrupado_view.apply(
+    lambda row: (
+        "-"
+        if row["QTD_PENDENTE"] == 0
+        else f"{row['DIAS_PROCESSO']} dias"
+    ),
+    axis=1
+)
 
 agrupado_view["REQ_DATA"] = (
     agrupado_view["REQ_DATA"].dt.strftime("%d/%m/%Y")
@@ -219,6 +251,7 @@ agrupado_view = agrupado_view.rename(columns={
     "INSUMOS": "Insumos",
     "ADM": "ADM da Obra",
     "STATUS": "Status de Compra",
+    "TEMPO_PROCESSO": "Tempo do Processo",
 })
 
 agrupado_view = agrupado_view[
@@ -230,13 +263,19 @@ agrupado_view = agrupado_view[
         "Estado",
         "Classificação",
         "Insumos",
+        "Tempo do Processo",
         "Status de Compra",
         "ADM da Obra",
     ]
 ]
 
+agrupado_styled = agrupado_view.style.map(
+    cor_tempo_processo,
+    subset=["Tempo do Processo"]
+)
+
 st.dataframe(
-    agrupado_view,
+    agrupado_styled,
     use_container_width=True,
     hide_index=True
 )
