@@ -7,6 +7,18 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stDataFrame"] th {
+        text-align: center !important;
+        font-weight: bold !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # =========================
 # BASES
 # =========================
@@ -56,10 +68,18 @@ df["ADM"] = df["ADM"].replace({"<NA>": None, "NAN": None})
 # PAINEL
 # =========================
 
-st.title("📋 Acompanhamento de Requisições — 2026")
+st.markdown(
+    """
+    <h1 style="text-align: center;">
+        Acompanhamento de Requisições — 2026
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
 
-emprds_disponiveis = sorted(df["EMPRD"].dropna().unique().tolist())
-default_emprds = emprds_disponiveis
+emprds_disponiveis = sorted(
+    df["EMPRD"].dropna().unique().tolist()
+)
 
 ano_atual = pd.Timestamp.now().year
 inicio_periodo = pd.Timestamp(year=ano_atual, month=1, day=1)
@@ -71,26 +91,28 @@ with col1:
     emprds_escolhidos = st.multiselect(
         "Selecione a(s) Obras (EMPRD):",
         options=emprds_disponiveis,
-        default=default_emprds,
+        default=emprds_disponiveis,
     )
 
-df_base_temp = df.copy()
+df_periodo = df.copy()
 
-if len(emprds_escolhidos) > 0:
-    df_base_temp = df_base_temp[df_base_temp["EMPRD"].isin(emprds_escolhidos)]
+if emprds_escolhidos:
+    df_periodo = df_periodo[
+        df_periodo["EMPRD"].isin(emprds_escolhidos)
+    ]
 
-df_temp_periodo = df_base_temp[
-    (df_base_temp["REQ_DATA"] >= inicio_periodo) &
-    (df_base_temp["REQ_DATA"] < fim_periodo)
+df_periodo = df_periodo[
+    (df_periodo["REQ_DATA"] >= inicio_periodo) &
+    (df_periodo["REQ_DATA"] < fim_periodo)
 ].copy()
 
-df_temp_periodo["PENDENTE_REAL"] = (
-    df_temp_periodo["OF_CDG"].isna()
-    & (df_temp_periodo["INSUMO_STATUS"] == "Apto")
+df_periodo["PENDENTE_REAL"] = (
+    df_periodo["OF_CDG"].isna()
+    & df_periodo["INSUMO_STATUS"].eq("Apto")
 )
 
-status_por_req_temp = (
-    df_temp_periodo
+status_por_req = (
+    df_periodo
     .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
     .sum()
     .apply(lambda x: "✅ Finalizada" if x == 0 else "⏳ Com Pendências")
@@ -98,13 +120,15 @@ status_por_req_temp = (
     .reset_index()
 )
 
-df_temp_periodo = df_temp_periodo.merge(
-    status_por_req_temp,
+df_periodo = df_periodo.merge(
+    status_por_req,
     on=["EMPRD", "REQ_CDG"],
     how="left"
 )
 
-status_req_opcoes = sorted(df_temp_periodo["STATUS_REQ"].dropna().unique().tolist())
+status_req_opcoes = sorted(
+    df_periodo["STATUS_REQ"].dropna().unique().tolist()
+)
 
 with col2:
     status_req_escolhidos = st.multiselect(
@@ -113,44 +137,16 @@ with col2:
         default=status_req_opcoes,
     )
 
-df_base = df.copy()
+df_filtrado = df_periodo.copy()
 
-if len(emprds_escolhidos) > 0:
-    df_base = df_base[df_base["EMPRD"].isin(emprds_escolhidos)]
-
-df_duas_semanas = df_base[
-    (df_base["REQ_DATA"] >= inicio_periodo) &
-    (df_base["REQ_DATA"] < fim_periodo)
-].copy()
-
-df_duas_semanas["PENDENTE_REAL"] = (
-    df_duas_semanas["OF_CDG"].isna()
-    & (df_duas_semanas["INSUMO_STATUS"] == "Apto")
-)
-
-status_por_req = (
-    df_duas_semanas
-    .groupby(["EMPRD", "REQ_CDG"])["PENDENTE_REAL"]
-    .sum()
-    .apply(lambda x: "✅ Finalizada" if x == 0 else "⏳ Com Pendências")
-    .rename("STATUS_REQ")
-    .reset_index()
-)
-
-df_duas_semanas = df_duas_semanas.merge(
-    status_por_req,
-    on=["EMPRD", "REQ_CDG"],
-    how="left"
-)
-
-if len(status_req_escolhidos) > 0:
-    df_duas_semanas = df_duas_semanas[
-        df_duas_semanas["STATUS_REQ"].isin(status_req_escolhidos)
+if status_req_escolhidos:
+    df_filtrado = df_filtrado[
+        df_filtrado["STATUS_REQ"].isin(status_req_escolhidos)
     ]
 
-if not df_duas_semanas.empty:
-    periodo_min = df_duas_semanas["REQ_DATA"].min().strftime("%d/%m/%Y")
-    periodo_max = df_duas_semanas["REQ_DATA"].max().strftime("%d/%m/%Y")
+if not df_filtrado.empty:
+    periodo_min = df_filtrado["REQ_DATA"].min().strftime("%d/%m/%Y")
+    periodo_max = df_filtrado["REQ_DATA"].max().strftime("%d/%m/%Y")
     st.markdown(f"**Período filtrado:** {periodo_min} → {periodo_max}")
 else:
     st.markdown("**Período filtrado:** sem requisições no intervalo selecionado.")
@@ -160,7 +156,7 @@ else:
 # =========================
 
 agrupado = (
-    df_duas_semanas
+    df_filtrado
     .groupby(["EMPRD", "REQ_CDG"], as_index=False)
     .agg(
         EMPRD_DESC=("EMPRD_DESC", "first"),
@@ -173,8 +169,11 @@ agrupado = (
     )
 )
 
-agrupado = agrupado.sort_values(["REQ_DATA", "EMPRD", "REQ_CDG"])
-agrupado = agrupado.set_index("REQ_CDG")
+agrupado = (
+    agrupado
+    .sort_values(["REQ_DATA", "EMPRD", "REQ_CDG"])
+    .set_index("REQ_CDG")
+)
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -188,7 +187,7 @@ with col3:
     st.metric("⏳ Com Pendências", (agrupado["QTD_PENDENTE"] > 0).sum())
 
 with col4:
-    total_ofs = df_duas_semanas["OF_CDG"].dropna().nunique()
+    total_ofs = df_filtrado["OF_CDG"].dropna().nunique()
     st.metric("🧾 Total de OFs Criadas", total_ofs)
 
 # =========================
@@ -199,10 +198,9 @@ st.subheader("📊 Resumo por Requisição")
 
 agrupado_view = agrupado.reset_index().copy()
 
-agrupado_view["REQ_DATA"] = pd.to_datetime(
-    agrupado_view["REQ_DATA"],
-    errors="coerce"
-).dt.strftime("%d/%m/%Y")
+agrupado_view["REQ_DATA"] = (
+    agrupado_view["REQ_DATA"].dt.strftime("%d/%m/%Y")
+)
 
 agrupado_view = agrupado_view.rename(columns={
     "REQ_CDG": "Requisição",
@@ -216,7 +214,25 @@ agrupado_view = agrupado_view.rename(columns={
     "STATUS": "Status de Compra",
 })
 
-st.dataframe(agrupado_view, use_container_width=True, hide_index=True)
+colunas_centralizadas = [
+    "Requisição",
+    "Nº da Obra",
+    "Estado",
+    "Data da Requisição",
+    "Insumos Solicitados",
+    "Insumos Pendentes",
+]
+
+agrupado_styled = agrupado_view.style.set_properties(
+    subset=colunas_centralizadas,
+    **{"text-align": "center"}
+)
+
+st.dataframe(
+    agrupado_styled,
+    use_container_width=True,
+    hide_index=True
+)
 
 col_esq, col_dir = st.columns(2)
 
@@ -233,16 +249,15 @@ with col_esq:
     ]
 
     base_of_status = (
-        df_duas_semanas[df_duas_semanas["OF_CDG"].notna()][colunas_exibir]
+        df_filtrado[df_filtrado["OF_CDG"].notna()][colunas_exibir]
         .drop_duplicates()
         .sort_values("OF_CDG", ascending=True)
         .copy()
     )
 
-    base_of_status["OF_DATA"] = pd.to_datetime(
-        base_of_status["OF_DATA"],
-        errors="coerce"
-    ).dt.strftime("%d/%m/%Y")
+    base_of_status["OF_DATA"] = (
+        base_of_status["OF_DATA"].dt.strftime("%d/%m/%Y")
+    )
 
     base_of_status = base_of_status.rename(columns={
         "REQ_CDG": "Requisição",
@@ -266,9 +281,7 @@ with col_dir:
         "INSUMO_DESC",
     ]
 
-    base_sem_of = df_duas_semanas[
-        df_duas_semanas["PENDENTE_REAL"]
-    ][colunas_exibir].copy()
+    base_sem_of = df_filtrado[df_filtrado["PENDENTE_REAL"]][colunas_exibir].copy()
 
     base_sem_of["REQ_DATA"] = base_sem_of["REQ_DATA"].dt.strftime("%d/%m/%Y")
 
