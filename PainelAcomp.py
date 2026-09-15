@@ -140,6 +140,7 @@ agrupado = (
         EMPRD_DESC=("EMPRD_DESC", "first"),
         EMPRD_UF=("EMPRD_UF", "first"),
         REQ_DATA=("REQ_DATA", "min"),
+        CLASSIFICACAO=("REQ_STATUS", "first"),
         QTD_INSUMOS=("INSUMO_DESC", "count"),
         QTD_PENDENTE=("PENDENTE_REAL", "sum"),
         ADM=("ADM", "first"),
@@ -153,20 +154,45 @@ agrupado = (
     .set_index("REQ_CDG")
 )
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
+
+total_diretas = (
+    agrupado["CLASSIFICACAO"]
+    .eq("Direto p/ OF")
+    .sum()
+)
+
+total_cotacoes = (
+    agrupado["CLASSIFICACAO"]
+    .eq("Cotação")
+    .sum()
+)
+
+total_ofs = df_filtrado["OF_CDG"].dropna().nunique()
 
 with col1:
-    st.metric("📦 Total Requisições", len(agrupado))
+    st.metric("📦 Compra Direta", total_diretas)
 
 with col2:
-    st.metric("✅ Total Finalizadas", (agrupado["QTD_PENDENTE"] == 0).sum())
+    st.metric("📝 Cotações", total_cotacoes)
 
 with col3:
-    st.metric("⏳ Com Pendências", (agrupado["QTD_PENDENTE"] > 0).sum())
+    st.metric(
+        "✅ Total Finalizadas",
+        (agrupado["QTD_PENDENTE"] == 0).sum()
+    )
 
 with col4:
-    total_ofs = df_filtrado["OF_CDG"].dropna().nunique()
-    st.metric("🧾 Total de OFs Criadas", total_ofs)
+    st.metric(
+        "⏳ Com Pendências",
+        (agrupado["QTD_PENDENTE"] > 0).sum()
+    )
+
+with col5:
+    st.metric(
+        "🧾 Total de OFs Criadas",
+        total_ofs
+    )
 
 # TABELAS
 st.subheader("📊 Resumo por Requisição")
@@ -183,6 +209,7 @@ agrupado_view = agrupado_view.rename(columns={
     "EMPRD_DESC": "Empreendimento",
     "EMPRD_UF": "Estado",
     "REQ_DATA": "Data da Requisição",
+    "CLASSIFICACAO": "Classificação",
     "QTD_INSUMOS": "Insumos Solicitados",
     "QTD_PENDENTE": "Insumos Pendentes",
     "ADM": "ADM da Obra",
