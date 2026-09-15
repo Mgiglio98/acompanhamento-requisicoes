@@ -229,9 +229,38 @@ agrupado_styled = agrupado_view.style.set_properties(
 )
 
 st.dataframe(
-    agrupado_styled,
+    agrupado_view,
     use_container_width=True,
-    hide_index=True
+    hide_index=True,
+    column_config={
+        "Requisição": st.column_config.NumberColumn(
+            "Requisição",
+            format="%d",
+            width="small",
+        ),
+        "Nº da Obra": st.column_config.TextColumn(
+            "Nº da Obra",
+            width="small",
+        ),
+        "Estado": st.column_config.TextColumn(
+            "Estado",
+            width="small",
+        ),
+        "Data da Requisição": st.column_config.TextColumn(
+            "Data da Requisição",
+            width="small",
+        ),
+        "Insumos Solicitados": st.column_config.NumberColumn(
+            "Insumos Solicitados",
+            format="%d",
+            width="small",
+        ),
+        "Insumos Pendentes": st.column_config.NumberColumn(
+            "Insumos Pendentes",
+            format="%d",
+            width="small",
+        ),
+    }
 )
 
 col_esq, col_dir = st.columns(2)
