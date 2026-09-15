@@ -203,18 +203,36 @@ agrupado_view["REQ_DATA"] = (
     agrupado_view["REQ_DATA"].dt.strftime("%d/%m/%Y")
 )
 
+agrupado_view["INSUMOS"] = (
+    (agrupado_view["QTD_INSUMOS"] - agrupado_view["QTD_PENDENTE"]).astype(str)
+    + " / "
+    + agrupado_view["QTD_INSUMOS"].astype(str)
+)
+
 agrupado_view = agrupado_view.rename(columns={
     "REQ_CDG": "Requisição",
     "EMPRD": "Nº da Obra",
     "EMPRD_DESC": "Empreendimento",
-    "EMPRD_UF": "Estado",
     "REQ_DATA": "Data da Requisição",
     "CLASSIFICACAO": "Classificação",
-    "QTD_INSUMOS": "Insumos Solicitados",
-    "QTD_PENDENTE": "Insumos Pendentes",
+    "INSUMOS": "Insumos",
     "ADM": "ADM da Obra",
     "STATUS": "Status de Compra",
 })
+
+agrupado_view = agrupado_view[
+    [
+        "Requisição",
+        "Data da Requisição",
+        "Nº da Obra",
+        "Empreendimento",
+        "Estado",
+        "Classificação",
+        "Insumos",
+        "Status de Compra",
+        "ADM da Obra",
+    ]
+]
 
 st.dataframe(
     agrupado_view,
