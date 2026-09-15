@@ -198,18 +198,27 @@ with col5:
 # TABELAS
 st.subheader("📊 Resumo por Requisição")
 
-def cor_tempo_processo(valor):
-    if valor == "-":
-        return ""
+def cor_tempo_processo(row):
+    if row["Tempo do Processo"] == "-":
+        return [""] * len(row)
 
-    dias = int(valor.split()[0])
+    dias = int(row["Tempo do Processo"].split()[0])
+    classificacao = row["Classificação"]
 
-    if dias <= 2:
-        return "background-color: #d4edda; color: #155724;"
-    elif dias == 3:
-        return "background-color: #fff3cd; color: #856404;"
+    prazo = 6 if classificacao == "Cotação" else 3
+
+    if dias < prazo:
+        cor = "background-color: #d4edda; color: #155724;"
+    elif dias == prazo:
+        cor = "background-color: #fff3cd; color: #856404;"
     else:
-        return "background-color: #f8d7da; color: #721c24;"
+        cor = "background-color: #f8d7da; color: #721c24;"
+
+    estilos = [""] * len(row)
+    indice_tempo = row.index.get_loc("Tempo do Processo")
+    estilos[indice_tempo] = cor
+
+    return estilos
 
 agrupado_view = agrupado.reset_index().copy()
 
@@ -262,16 +271,16 @@ agrupado_view = agrupado_view[
         "Empreendimento",
         "Estado",
         "Classificação",
-        "Insumos",
+        "Comprados / Total",
         "Tempo do Processo",
         "Status de Compra",
         "ADM da Obra",
     ]
 ]
 
-agrupado_styled = agrupado_view.style.map(
+agrupado_styled = agrupado_view.style.apply(
     cor_tempo_processo,
-    subset=["Tempo do Processo"]
+    axis=1
 )
 
 st.dataframe(
