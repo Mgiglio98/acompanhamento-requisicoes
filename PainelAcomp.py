@@ -205,7 +205,12 @@ def cor_tempo_processo(row):
     dias = int(row["Tempo do Processo"].split()[0])
     classificacao = row["Classificação"]
 
-    prazo = 6 if classificacao == "Cotação" else 3
+    if classificacao == "Cotação":
+        prazo = 6
+    elif classificacao == "Direto p/ OF":
+        prazo = 3
+    else:
+        return [""] * len(row)
 
     if dias < prazo:
         cor = "background-color: #d4edda; color: #155724;"
@@ -257,7 +262,7 @@ agrupado_view = agrupado_view.rename(columns={
     "REQ_DATA": "Data da Requisição",
     "EMPRD_UF": "Estado",
     "CLASSIFICACAO": "Classificação",
-    "INSUMOS": "Insumos",
+    "INSUMOS": "Comprados / Total",
     "ADM": "ADM da Obra",
     "STATUS": "Status de Compra",
     "TEMPO_PROCESSO": "Tempo do Processo",
