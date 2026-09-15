@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 st.set_page_config(
     page_title="Acompanhamento de Requisições",
@@ -228,39 +229,49 @@ agrupado_styled = agrupado_view.style.set_properties(
     **{"text-align": "center"}
 )
 
-st.dataframe(
-    agrupado_view,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Requisição": st.column_config.NumberColumn(
-            "Requisição",
-            format="%d",
-            width="small",
-        ),
-        "Nº da Obra": st.column_config.TextColumn(
-            "Nº da Obra",
-            width="small",
-        ),
-        "Estado": st.column_config.TextColumn(
-            "Estado",
-            width="small",
-        ),
-        "Data da Requisição": st.column_config.TextColumn(
-            "Data da Requisição",
-            width="small",
-        ),
-        "Insumos Solicitados": st.column_config.NumberColumn(
-            "Insumos Solicitados",
-            format="%d",
-            width="small",
-        ),
-        "Insumos Pendentes": st.column_config.NumberColumn(
-            "Insumos Pendentes",
-            format="%d",
-            width="small",
-        ),
+st.markdown(
+    """
+    <style>
+    .ag-header-cell-label {
+        justify-content: center !important;
+        font-weight: bold !important;
     }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+gb = GridOptionsBuilder.from_dataframe(agrupado_view)
+
+gb.configure_default_column(
+    sortable=True,
+    filter=True,
+    resizable=True,
+)
+
+colunas_centralizadas = [
+    "Requisição",
+    "Nº da Obra",
+    "Estado",
+    "Data da Requisição",
+    "Insumos Solicitados",
+    "Insumos Pendentes",
+]
+
+for coluna in colunas_centralizadas:
+    gb.configure_column(
+        coluna,
+        cellStyle={"textAlign": "center"},
+    )
+
+grid_options = gb.build()
+
+AgGrid(
+    agrupado_view,
+    gridOptions=grid_options,
+    height=350,
+    fit_columns_on_grid_load=True,
+    allow_unsafe_jscode=True,
 )
 
 col_esq, col_dir = st.columns(2)
