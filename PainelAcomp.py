@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder
 
 st.set_page_config(
     page_title="Acompanhamento de Requisições",
@@ -8,22 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stDataFrame"] th {
-        text-align: center !important;
-        font-weight: bold !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# =========================
 # BASES
-# =========================
-
 DATA_PATH = "Acompanhamento_REQ_OF.xlsx"
 DATA_ADM_PATH = "AdmxEmprd.xlsx"
 
@@ -64,11 +48,7 @@ df["ADM"] = (
 
 df["ADM"] = df["ADM"].replace({"<NA>": None, "NAN": None})
 
-
-# =========================
 # PAINEL
-# =========================
-
 st.markdown(
     """
     <h1 style="text-align: center;">
@@ -152,10 +132,7 @@ if not df_filtrado.empty:
 else:
     st.markdown("**Período filtrado:** sem requisições no intervalo selecionado.")
 
-# =========================
 # RESUMO AGRUPADO
-# =========================
-
 agrupado = (
     df_filtrado
     .groupby(["EMPRD", "REQ_CDG"], as_index=False)
@@ -191,10 +168,7 @@ with col4:
     total_ofs = df_filtrado["OF_CDG"].dropna().nunique()
     st.metric("🧾 Total de OFs Criadas", total_ofs)
 
-# =========================
 # TABELAS
-# =========================
-
 st.subheader("📊 Resumo por Requisição")
 
 agrupado_view = agrupado.reset_index().copy()
@@ -229,49 +203,10 @@ agrupado_styled = agrupado_view.style.set_properties(
     **{"text-align": "center"}
 )
 
-st.markdown(
-    """
-    <style>
-    .ag-header-cell-label {
-        justify-content: center !important;
-        font-weight: bold !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-gb = GridOptionsBuilder.from_dataframe(agrupado_view)
-
-gb.configure_default_column(
-    sortable=True,
-    filter=True,
-    resizable=True,
-)
-
-colunas_centralizadas = [
-    "Requisição",
-    "Nº da Obra",
-    "Estado",
-    "Data da Requisição",
-    "Insumos Solicitados",
-    "Insumos Pendentes",
-]
-
-for coluna in colunas_centralizadas:
-    gb.configure_column(
-        coluna,
-        cellStyle={"textAlign": "center"},
-    )
-
-grid_options = gb.build()
-
-AgGrid(
+st.dataframe(
     agrupado_view,
-    gridOptions=grid_options,
-    height=350,
-    fit_columns_on_grid_load=True,
-    allow_unsafe_jscode=True,
+    use_container_width=True,
+    hide_index=True
 )
 
 col_esq, col_dir = st.columns(2)
