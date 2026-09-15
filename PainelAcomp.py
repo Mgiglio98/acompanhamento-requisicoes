@@ -189,20 +189,6 @@ agrupado_view = agrupado_view.rename(columns={
     "STATUS": "Status de Compra",
 })
 
-colunas_centralizadas = [
-    "Requisição",
-    "Nº da Obra",
-    "Estado",
-    "Data da Requisição",
-    "Insumos Solicitados",
-    "Insumos Pendentes",
-]
-
-agrupado_styled = agrupado_view.style.set_properties(
-    subset=colunas_centralizadas,
-    **{"text-align": "center"}
-)
-
 st.dataframe(
     agrupado_view,
     use_container_width=True,
