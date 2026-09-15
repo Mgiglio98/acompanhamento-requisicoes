@@ -214,6 +214,7 @@ agrupado_view = agrupado_view.rename(columns={
     "EMPRD": "Nº da Obra",
     "EMPRD_DESC": "Empreendimento",
     "REQ_DATA": "Data da Requisição",
+    "EMPRD_UF": "Estado",
     "CLASSIFICACAO": "Classificação",
     "INSUMOS": "Insumos",
     "ADM": "ADM da Obra",
