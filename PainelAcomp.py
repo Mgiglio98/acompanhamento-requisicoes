@@ -275,7 +275,7 @@ agrupado_view["INSUMOS"] = (
 
 agrupado_view["ADM"] = agrupado_view["ADM"].fillna("-")
 
-grupado_view = agrupado_view.rename(columns={
+agrupado_view = agrupado_view.rename(columns={
     "REQ_CDG": "Requisição",
     "EMPRD": "Nº da Obra",
     "EMPRD_DESC": "Empreendimento",
@@ -301,7 +301,7 @@ agrupado_view = agrupado_view[
         "Tempo do Processo",
         "Status de Compra",
         "ADM da Obra",
-        "Prazo",  # existe internamente
+        "Prazo",
     ]
 ]
 
