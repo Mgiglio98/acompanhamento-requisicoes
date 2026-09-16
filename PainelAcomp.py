@@ -286,7 +286,6 @@ agrupado_view = agrupado_view.rename(columns={
     "ADM": "ADM da Obra",
     "STATUS": "Status de Compra",
     "TEMPO_PROCESSO": "Tempo do Processo",
-    "PRAZO": "Prazo",
 })
 
 agrupado_view = agrupado_view[
