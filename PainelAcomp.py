@@ -301,7 +301,6 @@ agrupado_view = agrupado_view[
         "Tempo do Processo",
         "Status de Compra",
         "ADM da Obra",
-        "Prazo",
     ]
 ]
 
