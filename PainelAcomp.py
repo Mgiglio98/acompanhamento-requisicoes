@@ -155,7 +155,36 @@ agrupado = (
     .set_index("REQ_CDG")
 )
 
-col1, col2, col3, col4, col5 = st.columns(5)
+# CÁLCULO DE PRAZO
+hoje = pd.Timestamp.now().normalize()
+
+feriados = np.array([
+    "2026-09-07",
+    "2026-10-12",
+    "2026-11-02",
+    "2026-11-20",
+    "2026-12-25",
+], dtype="datetime64[D]")
+
+agrupado["DIAS_PROCESSO"] = agrupado["REQ_DATA"].apply(
+    lambda data: np.busday_count(
+        data.date(),
+        hoje.date(),
+        holidays=feriados
+    ) if pd.notna(data) else None
+)
+
+agrupado["PRAZO"] = agrupado["CLASSIFICACAO"].map({
+    "Direto p/ OF": 3,
+    "Cotação": 6,
+})
+
+agrupado["ATRASADA"] = (
+    (agrupado["QTD_PENDENTE"] > 0)
+    & (agrupado["DIAS_PROCESSO"] > agrupado["PRAZO"])
+)
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 total_diretas = (
     agrupado["CLASSIFICACAO"]
@@ -170,6 +199,8 @@ total_cotacoes = (
 )
 
 total_ofs = df_filtrado["OF_CDG"].dropna().nunique()
+
+total_atrasadas = agrupado["ATRASADA"].sum()
 
 with col1:
     st.metric("📦 Compra Direta", total_diretas)
@@ -190,10 +221,10 @@ with col4:
     )
 
 with col5:
-    st.metric(
-        "🧾 Total de OFs Criadas",
-        total_ofs
-    )
+    st.metric("🔴 Fora do Prazo", total_atrasadas)
+
+with col6:
+    st.metric("🧾 OFs Criadas", total_ofs)
 
 # TABELAS
 st.subheader("📊 Resumo por Requisição")
@@ -203,13 +234,9 @@ def cor_tempo_processo(row):
         return [""] * len(row)
 
     dias = int(row["Tempo do Processo"].split()[0])
-    classificacao = row["Classificação"]
+    prazo = row["Prazo"]
 
-    if classificacao == "Cotação":
-        prazo = 6
-    elif classificacao == "Direto p/ OF":
-        prazo = 3
-    else:
+    if pd.isna(prazo):
         return [""] * len(row)
 
     if dias < prazo:
@@ -226,15 +253,6 @@ def cor_tempo_processo(row):
     return estilos
 
 agrupado_view = agrupado.reset_index().copy()
-
-hoje = pd.Timestamp.now().normalize()
-
-agrupado_view["DIAS_PROCESSO"] = agrupado_view["REQ_DATA"].apply(
-    lambda data: np.busday_count(
-        data.date(),
-        hoje.date()
-    ) if pd.notna(data) else None
-)
 
 agrupado_view["TEMPO_PROCESSO"] = agrupado_view.apply(
     lambda row: (
@@ -255,6 +273,8 @@ agrupado_view["INSUMOS"] = (
     + agrupado_view["QTD_INSUMOS"].astype(str)
 )
 
+agrupado_view["ADM"] = agrupado_view["ADM"].fillna("-")
+
 agrupado_view = agrupado_view.rename(columns={
     "REQ_CDG": "Requisição",
     "EMPRD": "Nº da Obra",
@@ -266,6 +286,7 @@ agrupado_view = agrupado_view.rename(columns={
     "ADM": "ADM da Obra",
     "STATUS": "Status de Compra",
     "TEMPO_PROCESSO": "Tempo do Processo",
+    "PRAZO": "Prazo",
 })
 
 agrupado_view = agrupado_view[
@@ -280,12 +301,14 @@ agrupado_view = agrupado_view[
         "Tempo do Processo",
         "Status de Compra",
         "ADM da Obra",
+        "Prazo",
     ]
 ]
 
-agrupado_styled = agrupado_view.style.apply(
-    cor_tempo_processo,
-    axis=1
+agrupado_styled = (
+    agrupado_view.style
+    .apply(cor_tempo_processo, axis=1)
+    .hide(axis="columns", subset=["Prazo"])
 )
 
 st.dataframe(
