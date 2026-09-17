@@ -305,16 +305,18 @@ agrupado_view = agrupado_view[
     ]
 ]
 
-agrupado_styled = (
-    agrupado_view.style
-    .apply(cor_tempo_processo, axis=1)
-    .hide(axis="columns", subset=["Prazo"])
+agrupado_styled = agrupado_view.style.apply(
+    cor_tempo_processo,
+    axis=1
 )
 
 st.dataframe(
     agrupado_styled,
     use_container_width=True,
-    hide_index=True
+    hide_index=True,
+    column_config={
+        "Prazo": None,
+    }
 )
 
 col_esq, col_dir = st.columns(2)
